@@ -58,7 +58,7 @@ export default function RegisterPage() {
 
   if (submitted) {
     return (
-      <main className="mx-auto flex w-full max-w-5xl flex-col gap-10 rounded-3xl border border-transparent bg-white p-8 shadow-[0_35px_90px_rgba(0,0,0,0.08)] lg:flex-row">
+      <div className="flex flex-1 items-center justify-center bg-brand-50 px-4 py-8 text-brand-900">
         <div className="w-full max-w-md rounded-2xl border border-transparent bg-white p-8 text-center shadow-[0_25px_70px_rgba(0,0,0,0.08)]">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-brand-100">
             <svg className="h-8 w-8 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -73,12 +73,12 @@ export default function RegisterPage() {
             Volver al inicio de sesión
           </Link>
         </div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-brand-50 py-12 text-brand-900">
+    <div className="flex flex-1 items-center justify-center bg-brand-50 px-4 py-8 text-brand-900">
       <div className="mx-auto w-full max-w-4xl rounded-3xl border border-transparent bg-white shadow-[0_35px_90px_rgba(0,0,0,0.08)]">
         <div className="grid gap-0 md:grid-cols-2">
           <div className="border-r border-brand-50 p-8">
@@ -181,6 +181,6 @@ export default function RegisterPage() {
           </aside>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
