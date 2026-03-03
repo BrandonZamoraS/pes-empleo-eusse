@@ -24,7 +24,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <Navbar/>
-        <main className="flex-1">
+        <main className="flex-1 flex flex-col">
           {children}
         </main>
         <Footer />

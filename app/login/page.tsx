@@ -119,7 +119,7 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <main className="min-h-screen bg-brand-50 py-12 text-brand-900">
+    <div className="flex flex-1 items-center justify-center bg-brand-50 px-4 py-8 text-brand-900">
       <Suspense fallback={
         <div className="mx-auto flex w-full max-w-5xl items-center justify-center rounded-3xl border border-transparent bg-white p-8 shadow-[0_35px_90px_rgba(0,0,0,0.08)]">
           <p className="text-brand-900/70">Cargando...</p>
@@ -127,6 +127,6 @@ export default function LoginPage() {
       }>
         <LoginContent />
       </Suspense>
-    </main>
+    </div>
   );
 }
