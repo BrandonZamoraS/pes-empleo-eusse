@@ -6,15 +6,30 @@ import ResumesContent from "./resumes_content";
 export default async function ResumesPage() {
   const { user, profile } = await getCurrentUser();
 
+  // Verificar autenticación y autorización
   if (!user || !profile) {
     redirect("/login");
   }
 
-  if (profile.user_role !== "hr" && profile.user_role !== "admin") {
+  if (!["hr", "admin"].includes(profile.user_role)) {
     redirect("/dashboard/postulante");
   }
 
-  const { data, error } = await getGeneralCvs();
+  try {
+    const { data, error } = await getGeneralCvs();
 
-  return <ResumesContent initialCvs={data || []} initialError={error || null} />;
+    return (
+      <ResumesContent 
+        initialCvs={data || []} 
+        initialError={error || null} 
+      />
+    );
+  } catch (error) {
+    return (
+      <ResumesContent 
+        initialCvs={[]} 
+        initialError="Error al cargar los CVs. Intenta recargar la página." 
+      />
+    );
+  }
 }

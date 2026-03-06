@@ -1,0 +1,163 @@
+﻿"use client";
+
+import { useState } from "react";
+import type { UserRole } from "@/types/auth";
+import {
+  type UserProfileData,
+  type UserInviteData,
+} from "@/lib/actions/roles";
+import {
+  createCompany,
+  updateCompany,
+  deleteCompany,
+  createLocation,
+  updateLocation,
+  deleteLocation,
+  createPosition,
+  updatePosition,
+  deletePosition,
+  togglePositionStatus,
+  type CompanyData,
+  type LocationData,
+  type PositionData,
+} from "@/lib/actions/config";
+import { useMessages } from "@/lib/hooks/useMessages";
+import { useTabs, TABS } from "@/lib/hooks/useTabs";
+import RolesTab from "./components/RolesTab";
+import CrudTab from "./components/CrudTab";
+
+interface ConfiguracionContentProps {
+  initialUsers: UserProfileData[];
+  initialInvites: UserInviteData[];
+  initialCompanies: CompanyData[];
+  initialLocations: LocationData[];
+  initialPositions: PositionData[];
+  currentUserProfileId: string;
+}
+
+export default function ConfiguracionContent({
+  initialUsers,
+  initialInvites,
+  initialCompanies,
+  initialLocations,
+  initialPositions,
+  currentUserProfileId,
+}: ConfiguracionContentProps) {
+  // State
+  const [users, setUsers] = useState<UserProfileData[]>(initialUsers);
+  const [invites, setInvites] = useState<UserInviteData[]>(initialInvites);
+  const [companies, setCompanies] = useState<CompanyData[]>(initialCompanies);
+  const [locations, setLocations] = useState<LocationData[]>(initialLocations);
+  const [positions, setPositions] = useState<PositionData[]>(initialPositions);
+
+  // Hooks
+  const { activeTab, handleTabChange } = useTabs();
+  const { error, success, showError, showSuccess } = useMessages();
+
+  // Message feedback component
+  const MessageFeedback = () => (
+    <>
+      {error && (
+        <div className="rounded-2xl bg-rose-50 border border-rose-200 p-4 text-rose-700 text-sm">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="rounded-2xl bg-green-50 border border-green-200 p-4 text-green-700 text-sm">
+          {success}
+        </div>
+      )}
+    </>
+  );
+
+  // Tab navigation component
+  const TabNavigation = () => (
+    <div className="flex flex-wrap gap-2">
+      {TABS.map((tab) => (
+        <button
+          key={tab.id}
+          onClick={() => handleTabChange(tab.id)}
+          className={`rounded-2xl px-4 py-2 text-sm font-medium transition-all ${
+            activeTab === tab.id
+              ? "bg-brand-400 text-white shadow-lg"
+              : "bg-white text-brand-900 hover:bg-brand-100"
+          }`}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="space-y-6 text-brand-900">
+      <MessageFeedback />
+      <TabNavigation />
+
+      {/* ROLES TAB */}
+      {activeTab === "roles" && (
+        <RolesTab
+          users={users}
+          invites={invites}
+          currentUserProfileId={currentUserProfileId}
+          onShowMessage={(type, message) => type === "error" ? showError(message) : showSuccess(message)}
+          onUpdateUsers={setUsers}
+          onUpdateInvites={setInvites}
+        />
+      )}
+
+      {/* COMPANIES TAB */}
+      {activeTab === "companies" && (
+        <CrudTab<CompanyData>
+          title="CompaÃ±Ã­as"
+          items={companies}
+          itemName="compaÃ±Ã­a"
+          fieldName="name"
+          placeholder="Nombre de la compaÃ±Ã­a"
+          showActiveStatus={false}
+          onShowMessage={(type, message) => type === "error" ? showError(message) : showSuccess(message)}
+          onUpdateItems={setCompanies}
+          onCreate={createCompany}
+          onUpdate={updateCompany}
+          onDelete={deleteCompany}
+        />
+      )}
+
+      {/* LOCATIONS TAB */}
+      {activeTab === "locations" && (
+        <CrudTab<LocationData>
+          title="Ubicaciones"
+          items={locations}
+          itemName="ubicaciÃ³n"
+          fieldName="name"
+          placeholder="Nombre de la ubicaciÃ³n"
+          showActiveStatus={false}
+          onShowMessage={(type, message) => type === "error" ? showError(message) : showSuccess(message)}
+          onUpdateItems={setLocations}
+          onCreate={createLocation}
+          onUpdate={updateLocation}
+          onDelete={deleteLocation}
+        />
+      )}
+
+      {/* POSITIONS TAB */}
+      {activeTab === "positions" && (
+        <CrudTab<PositionData>
+          title="Posiciones"
+          items={positions}
+          itemName="posiciÃ³n"
+          fieldName="description"
+          placeholder="DescripciÃ³n de la posiciÃ³n"
+          showActiveStatus={true}
+          onShowMessage={(type, message) => type === "error" ? showError(message) : showSuccess(message)}
+          onUpdateItems={setPositions}
+          onCreate={createPosition}
+          onUpdate={updatePosition}
+          onDelete={deletePosition}
+          onToggleStatus={togglePositionStatus}
+        />
+      )}
+    </div>
+  );
+}
+
