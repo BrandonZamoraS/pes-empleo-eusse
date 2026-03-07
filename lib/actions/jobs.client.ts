@@ -1,6 +1,6 @@
 "use client";
 
-import type { JobStatus, QuestionFormat } from "@/lib/types/jobs";
+import type { JobStatus, QuestionFormat } from "@/types/jobs";
 
 async function post(action: string, payload: Record<string, unknown>) {
   const res = await fetch("/api/jobs", {

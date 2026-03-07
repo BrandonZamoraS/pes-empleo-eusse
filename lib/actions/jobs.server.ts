@@ -11,7 +11,7 @@ import type {
   QuestionData,
   QuestionFormat,
   JobData,
-} from '../types/jobs';
+} from '@/types/jobs';
 
 export interface ActionResult {
   error?: string;
