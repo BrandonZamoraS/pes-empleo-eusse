@@ -109,11 +109,11 @@ export default function ConfiguracionContent({
       {/* COMPANIES TAB */}
       {activeTab === "companies" && (
         <CrudTab<CompanyData>
-          title="CompaÃ±Ã­as"
+          title="Compañías"
           items={companies}
-          itemName="compaÃ±Ã­a"
+          itemName="compañía"
           fieldName="name"
-          placeholder="Nombre de la compaÃ±Ã­a"
+          placeholder="Nombre de la compañía"
           showActiveStatus={false}
           onShowMessage={(type, message) => type === "error" ? showError(message) : showSuccess(message)}
           onUpdateItems={setCompanies}
@@ -128,9 +128,9 @@ export default function ConfiguracionContent({
         <CrudTab<LocationData>
           title="Ubicaciones"
           items={locations}
-          itemName="ubicaciÃ³n"
+          itemName="ubicación"
           fieldName="name"
-          placeholder="Nombre de la ubicaciÃ³n"
+          placeholder="Nombre de la ubicación"
           showActiveStatus={false}
           onShowMessage={(type, message) => type === "error" ? showError(message) : showSuccess(message)}
           onUpdateItems={setLocations}
@@ -145,9 +145,9 @@ export default function ConfiguracionContent({
         <CrudTab<PositionData>
           title="Posiciones"
           items={positions}
-          itemName="posiciÃ³n"
+          itemName="posición"
           fieldName="description"
-          placeholder="DescripciÃ³n de la posiciÃ³n"
+          placeholder="Descripción de la posición"
           showActiveStatus={true}
           onShowMessage={(type, message) => type === "error" ? showError(message) : showSuccess(message)}
           onUpdateItems={setPositions}
