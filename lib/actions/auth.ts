@@ -33,6 +33,7 @@ async function getSupabase() {
 export async function login(formData: FormData): Promise<AuthResult> {
   const email    = formData.get('email') as string;
   const password = formData.get('password') as string;
+  const returnUrl = formData.get('returnUrl') as string | null;
 
   if (!email || !password) return { error: 'Email y contraseña son requeridos' };
 
@@ -48,6 +49,12 @@ export async function login(formData: FormData): Promise<AuthResult> {
     : { data: null };
 
   revalidatePath('/', 'layout');
+
+  // Respect returnUrl if it's a safe internal path
+  if (returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//')) {
+    redirect(returnUrl);
+  }
+
   redirect(getRedirectForRole(profile?.user_role as UserRole));
 }
 

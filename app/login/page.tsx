@@ -10,10 +10,13 @@ import { createClient } from '@/lib/supabase/client';
 function LoginContent() {
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const authError = useSearchParams().get('error');
+  const searchParams = useSearchParams();
+  const authError = searchParams.get('error');
+  const returnUrl = searchParams.get('returnUrl') || searchParams.get('redirect') || '';
 
   const handleSubmit = (formData: FormData) => {
     setError(null);
+    if (returnUrl) formData.append('returnUrl', returnUrl);
     startTransition(async () => {
       const result = await login(formData);
       if (result?.error) setError(result.error);
@@ -23,9 +26,12 @@ function LoginContent() {
   const handleGoogleLogin = async () => {
     setError(null);
     const supabase = createClient();
+    const callbackUrl = returnUrl
+      ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(returnUrl)}`
+      : `${window.location.origin}/auth/callback`;
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: callbackUrl },
     });
     if (error) { setError(error.message); return; }
     if (data.url) window.location.href = data.url;

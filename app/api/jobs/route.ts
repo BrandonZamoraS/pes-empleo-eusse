@@ -3,6 +3,7 @@ import {
   getJobs,
   getCompanies,
   getLocations,
+  getPositions,
   createJob,
   updateJob,
   updateJobStatus,
@@ -15,7 +16,19 @@ import {
 } from "@/lib/actions/jobs.server";
 import type { JobStatus, QuestionFormat } from "@/types/jobs";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const type = request.nextUrl.searchParams.get('type');
+
+  if (type === 'positions') {
+    const result = await getPositions();
+    return NextResponse.json({ data: result.data || [] });
+  }
+
+  if (type === 'locations') {
+    const result = await getLocations();
+    return NextResponse.json({ data: result.data || [] });
+  }
+
   const [jobsResult, companiesResult, locationsResult] = await Promise.all([
     getJobs(),
     getCompanies(),

@@ -19,7 +19,7 @@ export default function JobCard({ job, onOpen, isAuthenticated = false, userRole
 
   const handleApply = () => {
     if (!isAuthenticated) {
-      router.push(`/login?redirect=/aplicar/${job.id}`);
+      router.push(`/login?returnUrl=/aplicar/${job.id}`);
     } else if (userRole === "postulant") {
       router.push(`/aplicar/${job.id}`);
     }

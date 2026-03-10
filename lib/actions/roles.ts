@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { sendEmail, buildInviteEmailHtml } from '@/lib/mail';
 import type { UserRole } from '@/types/auth';
 
 // Types
@@ -157,11 +158,26 @@ export async function createInvite(formData: FormData): Promise<ActionResult> {
       return { error: 'Ya existe una invitación pendiente para este email' };
     }
 
-    const { error } = await supabase
+    const { data: inserted, error } = await supabase
       .from('user_invite')
-      .insert({ email, role, created_by: currentProfile.id });
+      .insert({ email, role, created_by: currentProfile.id })
+      .select('token')
+      .single();
 
     if (error) throw error;
+
+    // Send invite email via Mailgun
+    if (inserted?.token) {
+      const html = buildInviteEmailHtml(email, role, inserted.token);
+      const mailResult = await sendEmail({
+        to: email,
+        subject: 'Invitación al Portal de Empleo Eusse',
+        html,
+      });
+      if (!mailResult.success) {
+        console.error('Failed to send invite email:', mailResult.error);
+      }
+    }
 
     revalidatePath('/dashboard/configuracion');
     return { success: true };
@@ -258,15 +274,30 @@ export async function resendInvite(inviteId: string): Promise<ActionResult> {
     // Eliminar la invitación anterior y crear una nueva
     await supabase.from('user_invite').delete().eq('id', inviteId);
 
-    const { error } = await supabase
+    const { data: newInvite, error } = await supabase
       .from('user_invite')
       .insert({
         email: originalInvite.email,
         role: originalInvite.role,
         created_by: originalInvite.created_by,
-      });
+      })
+      .select('token')
+      .single();
 
     if (error) throw error;
+
+    // Send invite email via Mailgun
+    if (newInvite?.token) {
+      const html = buildInviteEmailHtml(originalInvite.email, originalInvite.role, newInvite.token);
+      const mailResult = await sendEmail({
+        to: originalInvite.email,
+        subject: 'Invitación al Portal de Empleo Eusse',
+        html,
+      });
+      if (!mailResult.success) {
+        console.error('Failed to resend invite email:', mailResult.error);
+      }
+    }
 
     revalidatePath('/dashboard/configuracion');
     return { success: true };
