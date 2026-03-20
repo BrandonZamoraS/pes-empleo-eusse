@@ -12,7 +12,7 @@ export default function Home() {
       <section className="relative overflow-hidden">
         <div className="relative h-[60vh] w-full">
           <Image
-            src="/dron_naranjo.jpg"
+            src="/dron_naranjo.webp"
             alt="Equipo Eusse en operaciones"
             fill
             className="object-cover"
