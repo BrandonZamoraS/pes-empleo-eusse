@@ -177,7 +177,14 @@ export default function RegisterPage() {
           </div>
 
           <aside className="flex w-full items-center justify-center rounded-2xl border border-transparent bg-brand-900 p-8 text-brand-50 shadow-[0_35px_90px_rgba(0,0,0,0.2)]">
-            <Image src="/logo-eusse-reducido.png" alt="Logo Eusse" width={500} height={500} />
+            <Image
+              src="/logo-eusse-reducido.webp"
+              alt="Logo Eusse"
+              width={320}
+              height={320}
+              sizes="(max-width: 768px) 60vw, 320px"
+              className="h-auto w-full max-w-64 object-contain"
+            />
           </aside>
         </div>
       </div>

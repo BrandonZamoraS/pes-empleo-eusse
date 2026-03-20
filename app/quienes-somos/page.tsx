@@ -15,6 +15,7 @@ export default function Home() {
             src="/dron_naranjo.webp"
             alt="Equipo Eusse en operaciones"
             fill
+            sizes="100vw"
             className="object-cover"
             priority
           />

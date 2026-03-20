@@ -4,20 +4,9 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { TIMELINE_PHOTOS, getTimelinePhotosToPreload } from "./timeline_assets";
 
-const PHOTOS = [
-  "/nuestra_historia/Cuadro 1 - Grupo Eusse.webp",
-  "/nuestra_historia/Cuadro 2 - Grupo Eusse.webp",
-  "/nuestra_historia/Cuadro 3 - Grupo Eusse.webp",
-  "/nuestra_historia/Cuadro 4 - Grupo Eusse.webp",
-  "/nuestra_historia/Cuadro 5 - Grupo Eusse.webp",
-  "/nuestra_historia/Cuadro 6 - Grupo Eusse.webp",
-  "/nuestra_historia/Cuadro 7 - Grupo Eusse.webp",
-  "/nuestra_historia/Cuadro 8 - Grupo Eusse.webp",
-  "/nuestra_historia/Cuadro 9 - Grupo Eusse.webp",
-];
-
-const total = PHOTOS.length;
+const total = TIMELINE_PHOTOS.length;
 
 function NavButton({ direction, onClick }: { direction: "prev" | "next"; onClick: () => void }) {
   const isPrev = direction === "prev";
@@ -40,6 +29,16 @@ export default function TimelineSection() {
   const next = useCallback(() => setCurrent((i) => (i === total - 1 ? 0 : i + 1)), []);
 
   useEffect(() => {
+    const photosToPreload = getTimelinePhotosToPreload(TIMELINE_PHOTOS);
+
+    for (const src of photosToPreload) {
+      const image = new window.Image();
+      image.decoding = "async";
+      image.src = src;
+    }
+  }, []);
+
+  useEffect(() => {
     const id = setInterval(next, 5000);
     return () => clearInterval(id);
   }, [next]);
@@ -48,9 +47,9 @@ export default function TimelineSection() {
     const p = current === 0 ? total - 1 : current - 1;
     const n = current === total - 1 ? 0 : current + 1;
     return [
-      { src: PHOTOS[p], index: p },
-      { src: PHOTOS[current], index: current },
-      { src: PHOTOS[n], index: n },
+      { src: TIMELINE_PHOTOS[p], index: p },
+      { src: TIMELINE_PHOTOS[current], index: current },
+      { src: TIMELINE_PHOTOS[n], index: n },
     ];
   }, [current]);
 
@@ -101,7 +100,7 @@ export default function TimelineSection() {
             transition={{ duration: 0.4, ease: "easeInOut" }}
             className="relative flex items-center justify-center overflow-hidden rounded-xl bg-white/10 shadow-2xl shadow-brand-950/40 max-h-[70vh] md:max-h-112.5 w-full max-w-sm md:max-w-150"
           >
-            <Image src={PHOTOS[current]} alt={`Nuestra historia ${current + 1}`} width={0} height={0}
+            <Image src={TIMELINE_PHOTOS[current]} alt={`Nuestra historia ${current + 1}`} width={0} height={0}
               className="h-auto w-auto max-h-full max-w-full object-contain"
               sizes="(max-width: 768px) 90vw, 600px" style={{ width: "auto", height: "auto" }} priority
             />
@@ -113,7 +112,7 @@ export default function TimelineSection() {
 
       {/* Dots */}
       <div className="mt-6 flex items-center justify-center gap-2">
-        {PHOTOS.map((_, i) => (
+        {TIMELINE_PHOTOS.map((_, i) => (
           <button key={i} type="button" onClick={() => setCurrent(i)} aria-label={`Ir a imagen ${i + 1}`}
             className={`h-2.5 rounded-full transition-all duration-300 ${current === i ? "w-8 bg-white" : "w-2.5 bg-white/50 hover:bg-white/75"}`}
           />

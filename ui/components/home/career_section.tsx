@@ -42,15 +42,17 @@ export default function CareersSection() {
       {/* Background images */}
       <div className="absolute inset-0">
         <Image
-          src="/trabajador-1.jpg"
+          src="/trabajador-1.webp"
           alt=""
           fill
+          sizes="(max-width: 767px) 0px, 100vw"
           className="hidden md:block object-cover"
         />
         <Image
-          src="/trabajador-2.jpg"
+          src="/trabajador-2.webp"
           alt=""
           fill
+          sizes="(max-width: 767px) 100vw, 0px"
           className="md:hidden object-cover"
         />
         <div className="absolute inset-0 bg-linear-to-r from-[#003366]/95 via-[#003366]/85 to-[#1CA9C9]/80" />

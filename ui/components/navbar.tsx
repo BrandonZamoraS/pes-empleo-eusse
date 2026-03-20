@@ -90,7 +90,7 @@ export default function Navbar() {
             priority
           />
           <Image
-            src="/logo-eusse-peq.webp"
+            src="/logo-eusse-reducido.webp"
             alt="Eusse"
             width={56}
             height={56}
