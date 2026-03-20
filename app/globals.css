@@ -33,6 +33,14 @@
   --color-muted-foreground: #334155;
 }
 
+.font-brand-sans {
+  font-family: "Montserrat", "Aptos", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+.font-brand-script {
+  font-family: "Satisfy", "Segoe Script", "Brush Script MT", "Lucida Handwriting", cursive;
+}
+
 
 :root { color-scheme: light; }
 .dark {
@@ -53,4 +61,3 @@
   --color-muted: #0f4a67;             /* “card”/separadores en dark */
   --color-muted-foreground: #cfe8f1;
 }
-

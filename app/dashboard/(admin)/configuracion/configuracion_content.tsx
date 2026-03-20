@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import { useState } from "react";
-import type { UserRole } from "@/types/auth";
 import {
   type UserProfileData,
   type UserInviteData,
@@ -35,6 +34,53 @@ interface ConfiguracionContentProps {
   currentUserProfileId: string;
 }
 
+interface MessageFeedbackProps {
+  error: string | null;
+  success: string | null;
+}
+
+function MessageFeedback({ error, success }: MessageFeedbackProps) {
+  return (
+    <>
+      {error && (
+        <div className="rounded-2xl bg-rose-50 border border-rose-200 p-4 text-rose-700 text-sm">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="rounded-2xl bg-green-50 border border-green-200 p-4 text-green-700 text-sm">
+          {success}
+        </div>
+      )}
+    </>
+  );
+}
+
+interface TabNavigationProps {
+  activeTab: ReturnType<typeof useTabs>["activeTab"];
+  onChange: ReturnType<typeof useTabs>["handleTabChange"];
+}
+
+function TabNavigation({ activeTab, onChange }: TabNavigationProps) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {TABS.map((tab) => (
+        <button
+          key={tab.id}
+          onClick={() => onChange(tab.id)}
+          className={`rounded-2xl px-4 py-2 text-sm font-medium transition-all ${
+            activeTab === tab.id
+              ? "bg-brand-400 text-white shadow-lg"
+              : "bg-white text-brand-900 hover:bg-brand-100"
+          }`}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function ConfiguracionContent({
   initialUsers,
   initialInvites,
@@ -54,45 +100,10 @@ export default function ConfiguracionContent({
   const { activeTab, handleTabChange } = useTabs();
   const { error, success, showError, showSuccess } = useMessages();
 
-  // Message feedback component
-  const MessageFeedback = () => (
-    <>
-      {error && (
-        <div className="rounded-2xl bg-rose-50 border border-rose-200 p-4 text-rose-700 text-sm">
-          {error}
-        </div>
-      )}
-      {success && (
-        <div className="rounded-2xl bg-green-50 border border-green-200 p-4 text-green-700 text-sm">
-          {success}
-        </div>
-      )}
-    </>
-  );
-
-  // Tab navigation component
-  const TabNavigation = () => (
-    <div className="flex flex-wrap gap-2">
-      {TABS.map((tab) => (
-        <button
-          key={tab.id}
-          onClick={() => handleTabChange(tab.id)}
-          className={`rounded-2xl px-4 py-2 text-sm font-medium transition-all ${
-            activeTab === tab.id
-              ? "bg-brand-400 text-white shadow-lg"
-              : "bg-white text-brand-900 hover:bg-brand-100"
-          }`}
-        >
-          {tab.label}
-        </button>
-      ))}
-    </div>
-  );
-
   return (
     <div className="space-y-6 text-brand-900">
-      <MessageFeedback />
-      <TabNavigation />
+      <MessageFeedback error={error} success={success} />
+      <TabNavigation activeTab={activeTab} onChange={handleTabChange} />
 
       {/* ROLES TAB */}
       {activeTab === "roles" && (

@@ -25,6 +25,63 @@ export interface ActionResult {
   success?: boolean;
 }
 
+interface EducationPayload {
+  degreeLevel?: string;
+  endDate?: string;
+  fieldOfStudy?: string;
+  institutionName?: string;
+  isInProgress?: boolean;
+  startDate?: string;
+}
+
+interface WorkExperiencePayload {
+  companyName?: string;
+  endDate?: string;
+  isCurrent?: boolean;
+  jobTitle?: string;
+  responsibilities?: string;
+  startDate?: string;
+}
+
+interface StorageErrorShape {
+  status?: number;
+  statusCode?: string;
+}
+
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function toEducationPayload(value: unknown): EducationPayload | null {
+  if (!isObjectRecord(value)) {
+    return null;
+  }
+
+  return {
+    degreeLevel: typeof value.degreeLevel === 'string' ? value.degreeLevel : undefined,
+    endDate: typeof value.endDate === 'string' ? value.endDate : undefined,
+    fieldOfStudy: typeof value.fieldOfStudy === 'string' ? value.fieldOfStudy : undefined,
+    institutionName: typeof value.institutionName === 'string' ? value.institutionName : undefined,
+    isInProgress: value.isInProgress === true,
+    startDate: typeof value.startDate === 'string' ? value.startDate : undefined,
+  };
+}
+
+function toWorkExperiencePayload(value: unknown): WorkExperiencePayload | null {
+  if (!isObjectRecord(value)) {
+    return null;
+  }
+
+  return {
+    companyName: typeof value.companyName === 'string' ? value.companyName : undefined,
+    endDate: typeof value.endDate === 'string' ? value.endDate : undefined,
+    isCurrent: value.isCurrent === true,
+    jobTitle: typeof value.jobTitle === 'string' ? value.jobTitle : undefined,
+    responsibilities: typeof value.responsibilities === 'string' ? value.responsibilities : undefined,
+    startDate: typeof value.startDate === 'string' ? value.startDate : undefined,
+  };
+}
+
 /**
  * Actualizar nombre del usuario en user_profile
  */
@@ -409,17 +466,24 @@ export async function submitJobApplication(formData: FormData): Promise<ActionRe
   // Insert education records if provided
   if (educationJSON && newApplication) {
     try {
-      const education = JSON.parse(educationJSON);
+      const education = JSON.parse(educationJSON) as unknown;
       if (Array.isArray(education) && education.length > 0) {
-        const educationRecords = education.map((edu: any) => ({
-          application_id: newApplication.id,
-          institution_name: edu.institutionName,
-          degree_level: edu.degreeLevel,
-          field_of_study: edu.fieldOfStudy || null,
-          start_date: edu.startDate || null,
-          end_date: edu.endDate || null,
-          is_in_progress: edu.isInProgress || false
-        }));
+        const educationRecords = education.flatMap((entry) => {
+          const edu = toEducationPayload(entry);
+          if (!edu?.institutionName || !edu.degreeLevel) {
+            return [];
+          }
+
+          return [{
+            application_id: newApplication.id,
+            institution_name: edu.institutionName,
+            degree_level: edu.degreeLevel,
+            field_of_study: edu.fieldOfStudy || null,
+            start_date: edu.startDate || null,
+            end_date: edu.endDate || null,
+            is_in_progress: edu.isInProgress || false,
+          }];
+        });
 
         const { error: eduError } = await supabase
           .from('job_application_education')
@@ -437,10 +501,14 @@ export async function submitJobApplication(formData: FormData): Promise<ActionRe
   // Insert work experience records if provided
   if (workExperienceJSON && newApplication) {
     try {
-      const workExperience = JSON.parse(workExperienceJSON);
+      const workExperience = JSON.parse(workExperienceJSON) as unknown;
       if (Array.isArray(workExperience) && workExperience.length > 0) {
         const workRecords = workExperience
-          .filter((work: any) => {
+          .map((entry) => toWorkExperiencePayload(entry))
+          .filter((work): work is WorkExperiencePayload => {
+            if (!work) {
+              return false;
+            }
             // Validate required fields
             if (!work.companyName || !work.jobTitle || !work.startDate) {
               return false;
@@ -456,7 +524,7 @@ export async function submitJobApplication(formData: FormData): Promise<ActionRe
             }
             return true;
           })
-          .map((work: any) => ({
+          .map((work) => ({
             application_id: newApplication.id,
             company_name: work.companyName,
             job_title: work.jobTitle,
@@ -628,7 +696,8 @@ export async function getCVDownloadUrl(cvId: number): Promise<{ url?: string; er
     return { url: signedUrl.signedUrl };
   }
 
-  const isNotFound = (signError as any)?.status === 400 || (signError as any)?.statusCode === '404';
+  const storageError = signError as StorageErrorShape | null;
+  const isNotFound = storageError?.status === 400 || storageError?.statusCode === '404';
   console.error('Error generating signed URL:', signError);
   return {
     error: isNotFound

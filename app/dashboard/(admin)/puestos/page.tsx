@@ -31,35 +31,47 @@ export default function RecruiterJobsPage() {
   const [locationFilter, setLocationFilter] = useState<string>("all");
   const [showClosed, setShowClosed] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Modal
   const [showModal, setShowModal] = useState(false);
   const [editingJob, setEditingJob] = useState<JobData | null>(null);
 
-  const loadData = useCallback(async () => {
-    setIsLoading(true);
-    const result = await fetchJobsDataClient();
-
-    if (result.error) {
-      setError(result.error);
-    } else {
-      setJobs(result.jobs || []);
-      setCompanies(result.companies || []);
-      setLocations(result.locations || []);
-    }
-
-    setIsLoading(false);
-  }, []);
-
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    let cancelled = false;
+
+    const run = async () => {
+      const result = await fetchJobsDataClient();
+
+      if (cancelled) {
+        return;
+      }
+
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setError(null);
+        setJobs(result.jobs || []);
+        setCompanies(result.companies || []);
+        setLocations(result.locations || []);
+      }
+
+      setIsLoading(false);
+    };
+
+    void run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshKey]);
 
   const handleRefresh = useCallback(() => {
+    setIsLoading(true);
     startTransition(() => {
-      loadData();
+      setRefreshKey((current) => current + 1);
     });
-  }, [loadData]);
+  }, []);
 
   const filteredJobs = useMemo(() => {
     const term = search.trim().toLowerCase();

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/supabase/server";
-import { getGeneralCvs } from "@/lib/actions/resumes";
+import { getGeneralCvs, type GeneralCvData } from "@/lib/actions/resumes";
 import ResumesContent from "./resumes_content";
 
 export default async function ResumesPage() {
@@ -15,21 +15,21 @@ export default async function ResumesPage() {
     redirect("/dashboard/postulante");
   }
 
+  let initialCvs: GeneralCvData[] = [];
+  let initialError: string | null = null;
+
   try {
     const { data, error } = await getGeneralCvs();
-
-    return (
-      <ResumesContent 
-        initialCvs={data || []} 
-        initialError={error || null} 
-      />
-    );
-  } catch (error) {
-    return (
-      <ResumesContent 
-        initialCvs={[]} 
-        initialError="Error al cargar los CVs. Intenta recargar la página." 
-      />
-    );
+    initialCvs = data || [];
+    initialError = error || null;
+  } catch {
+    initialError = "Error al cargar los CVs. Intenta recargar la página.";
   }
+
+  return (
+    <ResumesContent
+      initialCvs={initialCvs}
+      initialError={initialError}
+    />
+  );
 }

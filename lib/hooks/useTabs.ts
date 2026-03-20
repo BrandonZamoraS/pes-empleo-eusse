@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 export type TabId = "roles" | "companies" | "locations" | "positions";
@@ -30,23 +29,10 @@ export function useTabs(): UseTabsReturn {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-
-  const getInitialTab = (): TabId => {
-    const urlTab = searchParams.get("tab");
-    return isValidTab(urlTab) ? urlTab : "roles";
-  };
-
-  const [activeTab, setActiveTab] = useState<TabId>(getInitialTab);
-
-  useEffect(() => {
-    const urlTab = searchParams.get("tab");
-    if (isValidTab(urlTab) && urlTab !== activeTab) {
-      setActiveTab(urlTab);
-    }
-  }, [searchParams, activeTab]);
+  const urlTab = searchParams.get("tab");
+  const activeTab = isValidTab(urlTab) ? urlTab : "roles";
 
   const handleTabChange = (tabId: TabId) => {
-    setActiveTab(tabId);
     const params = new URLSearchParams(searchParams.toString());
     params.set("tab", tabId);
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });

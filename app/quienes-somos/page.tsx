@@ -48,7 +48,7 @@ export default function Home() {
           <div className="mt-8">
             <VideoSection
               videoId="8y6n12TkNYU"
-              posterSrc="/Video_Covers/video_cover2.jpg"
+              posterSrc="/Video_Covers/video_cover2.webp"
               className="mx-auto w-full max-w-4xl"
             />
           </div>

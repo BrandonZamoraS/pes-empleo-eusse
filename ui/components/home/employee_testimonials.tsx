@@ -75,7 +75,7 @@ export default function EmployeeTestimonials() {
               <div className="absolute inset-0 -z-10 bg-linear-to-b from-brand-900/60 via-brand-900/70 to-brand-900/80" />
               <div className="relative z-10 p-8 text-brand-50">
                 <Quote className="mb-6 h-10 w-10 opacity-80" aria-hidden="true" />
-                <p className="mb-8 text-pretty leading-relaxed text-brand-50/90">"{quote}"</p>
+                <p className="mb-8 text-pretty leading-relaxed text-brand-50/90">&ldquo;{quote}&rdquo;</p>
                 <div>
                   <p className="text-lg font-semibold">{name}</p>
                   <p className="text-sm text-brand-100/80">{role}</p>

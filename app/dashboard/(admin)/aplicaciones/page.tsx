@@ -30,6 +30,7 @@ export default function ApplicationsPage() {
   const [isPending, startTransition] = useTransition();
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [detailsError, setDetailsError] = useState<string | null>(null);
@@ -42,26 +43,6 @@ export default function ApplicationsPage() {
 
   // ID del perfil del usuario actual (simplificado - debería venir del contexto)
   const currentUserProfileId = "";
-
-  const loadApplications = useCallback(async () => {
-    setIsLoading(true);
-    const result = await getApplications({
-      limit: PAGE_SIZE,
-      offset: (page - 1) * PAGE_SIZE,
-      status,
-      search,
-    });
-    if (result.error) {
-      setError(result.error);
-      setApplications([]);
-      setTotal(0);
-    } else {
-      setError(null);
-      setApplications(result.data || []);
-      setTotal(result.total || 0);
-    }
-    setIsLoading(false);
-  }, [page, status, search]);
 
   const fetchApplicationDetails = useCallback(async (appId: number) => {
     setIsLoadingDetails(true);
@@ -76,12 +57,44 @@ export default function ApplicationsPage() {
   }, []);
 
   useEffect(() => {
-    loadApplications();
-  }, [loadApplications]);
+    let cancelled = false;
+
+    const run = async () => {
+      const result = await getApplications({
+        limit: PAGE_SIZE,
+        offset: (page - 1) * PAGE_SIZE,
+        status,
+        search,
+      });
+
+      if (cancelled) {
+        return;
+      }
+
+      if (result.error) {
+        setError(result.error);
+        setApplications([]);
+        setTotal(0);
+      } else {
+        setError(null);
+        setApplications(result.data || []);
+        setTotal(result.total || 0);
+      }
+
+      setIsLoading(false);
+    };
+
+    void run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [page, refreshKey, search, status]);
 
   const handleRefresh = () => {
+    setIsLoading(true);
     startTransition(() => {
-      loadApplications();
+      setRefreshKey((current) => current + 1);
     });
     const selectedId = selectedAppDetail?.id ?? selectedAppSummary?.id;
     if (selectedId) {
@@ -130,6 +143,7 @@ export default function ApplicationsPage() {
             <input
               value={search}
               onChange={(e) => {
+                setIsLoading(true);
                 setSearch(e.target.value);
                 setPage(1);
               }}
@@ -140,6 +154,7 @@ export default function ApplicationsPage() {
           <select
             value={status}
             onChange={(e) => {
+              setIsLoading(true);
               setStatus(e.target.value as ApplicationStatus | "all");
               setPage(1);
             }}
@@ -202,14 +217,26 @@ export default function ApplicationsPage() {
         </span>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => canPrev && setPage((p) => Math.max(1, p - 1))}
+            onClick={() => {
+              if (!canPrev) {
+                return;
+              }
+              setIsLoading(true);
+              setPage((p) => Math.max(1, p - 1));
+            }}
             disabled={!canPrev}
             className="rounded-xl border border-brand-200 bg-brand-50 px-3 py-1 disabled:opacity-50"
           >
             Anterior
           </button>
           <button
-            onClick={() => canNext && setPage((p) => p + 1)}
+            onClick={() => {
+              if (!canNext) {
+                return;
+              }
+              setIsLoading(true);
+              setPage((p) => p + 1);
+            }}
             disabled={!canNext}
             className="rounded-xl border border-brand-200 bg-brand-50 px-3 py-1 disabled:opacity-50"
           >

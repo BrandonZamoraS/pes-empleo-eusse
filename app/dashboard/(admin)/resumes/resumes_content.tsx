@@ -16,6 +16,75 @@ interface PreviewState {
   mimeType: string;
 }
 
+interface SearchControlsProps {
+  error: string | null;
+  filteredCount: number;
+  isPending: boolean;
+  onRefresh: () => void;
+  search: string;
+  setSearch: (value: string) => void;
+  sortOrder: "desc" | "asc";
+  setSortOrder: (value: "desc" | "asc") => void;
+}
+
+function SearchControls({
+  error,
+  filteredCount,
+  isPending,
+  onRefresh,
+  search,
+  setSearch,
+  sortOrder,
+  setSortOrder,
+}: SearchControlsProps) {
+  return (
+    <section className="rounded-3xl border border-transparent bg-white p-6 shadow-[0_25px_70px_rgba(0,0,0,0.06)]">
+      <div className="flex flex-wrap md:flex-nowrap items-center gap-3 w-full">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar por nombre, posición o ubicación"
+          className="flex-1 min-w-55 rounded-2xl border border-transparent bg-brand-50 px-4 py-2 text-sm text-brand-900 outline-none focus:ring-2 focus:ring-brand-400/40"
+        />
+        <button
+          onClick={() => setSearch("")}
+          className="rounded-2xl border border-transparent bg-brand-50 px-4 py-2 text-sm text-brand-900 shadow-[0_12px_30px_rgba(0,0,0,0.05)] shrink-0"
+        >
+          Limpiar
+        </button>
+        <button
+          onClick={onRefresh}
+          disabled={isPending}
+          className="rounded-2xl bg-brand-400 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 shrink-0"
+        >
+          {isPending ? "Actualizando..." : "Actualizar"}
+        </button>
+        <select
+          value={sortOrder}
+          onChange={(e) => setSortOrder(e.target.value as "desc" | "asc")}
+          className="rounded-2xl border border-transparent bg-brand-50 px-4 py-2 text-sm text-brand-900 outline-none focus:ring-2 focus:ring-brand-400/40 shrink-0"
+        >
+          <option value="desc">Más recientes primero</option>
+          <option value="asc">Más antiguos primero</option>
+        </select>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-3 text-xs text-brand-900/70">
+        <span>CV visibles: {filteredCount}</span>
+        {error && <span className="text-rose-600">Error: {error}</span>}
+      </div>
+    </section>
+  );
+}
+
+function EmptyState({ error }: { error: string | null }) {
+  return (
+    <div className="rounded-3xl border border-dashed border-brand-200 bg-white p-8 text-center text-sm text-brand-900/70 shadow-[0_20px_60px_rgba(0,0,0,0.05)]">
+      {error ? "No se pudieron cargar CVs generales." : "No se encontraron CVs generales."}
+    </div>
+  );
+}
+
 export default function ResumesContent({
   initialCvs,
   initialError,
@@ -48,18 +117,18 @@ export default function ResumesContent({
     const term = search.trim().toLowerCase();
 
     const matchesSearchTerm = (cv: GeneralCvData) => {
-      if (!term) return true;
-      
+      if (!term) {
+        return true;
+      }
+
       const searchableFields = [
         cv.candidate?.name,
         cv.bucket,
         cv.talent_pool?.position?.description,
         cv.talent_pool?.location?.name,
       ];
-      
-      return searchableFields.some(field => 
-        field?.toLowerCase().includes(term)
-      );
+
+      return searchableFields.some((field) => field?.toLowerCase().includes(term));
     };
 
     return cvs
@@ -69,59 +138,20 @@ export default function ResumesContent({
         const bDate = new Date(b.created_at).getTime();
         return sortOrder === "desc" ? bDate - aDate : aDate - bDate;
       });
-  }, [search, cvs, sortOrder]);
-
-  const SearchControls = () => (
-    <section className="rounded-3xl border border-transparent bg-white p-6 shadow-[0_25px_70px_rgba(0,0,0,0.06)]">
-      <div className="flex flex-wrap md:flex-nowrap items-center gap-3 w-full">
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por nombre, posición o ubicación"
-          className="flex-1 min-w-55 rounded-2xl border border-transparent bg-brand-50 px-4 py-2 text-sm text-brand-900 outline-none focus:ring-2 focus:ring-brand-400/40"
-        />
-        
-        <button
-          onClick={() => setSearch("")}
-          className="rounded-2xl border border-transparent bg-brand-50 px-4 py-2 text-sm text-brand-900 shadow-[0_12px_30px_rgba(0,0,0,0.05)] shrink-0"
-        >
-          Limpiar
-        </button>
-        
-        <button
-          onClick={handleRefresh}
-          disabled={isPending}
-          className="rounded-2xl bg-brand-400 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 shrink-0"
-        >
-          {isPending ? "Actualizando..." : "Actualizar"}
-        </button>
-        
-        <select
-          value={sortOrder}
-          onChange={(e) => setSortOrder(e.target.value as "desc" | "asc")}
-          className="rounded-2xl border border-transparent bg-brand-50 px-4 py-2 text-sm text-brand-900 outline-none focus:ring-2 focus:ring-brand-400/40 shrink-0"
-        >
-          <option value="desc">Más recientes primero</option>
-          <option value="asc">Más antiguos primero</option>
-        </select>
-      </div>
-      
-      <div className="mt-4 flex flex-wrap gap-3 text-xs text-brand-900/70">
-        <span>CV visibles: {filteredData.length}</span>
-        {error && <span className="text-rose-600">Error: {error}</span>}
-      </div>
-    </section>
-  );
-
-  const EmptyState = () => (
-    <div className="rounded-3xl border border-dashed border-brand-200 bg-white p-8 text-center text-sm text-brand-900/70 shadow-[0_20px_60px_rgba(0,0,0,0.05)]">
-      {error ? "No se pudieron cargar CVs generales." : "No se encontraron CVs generales."}
-    </div>
-  );
+  }, [cvs, search, sortOrder]);
 
   return (
     <div className="space-y-6 text-brand-900">
-      <SearchControls />
+      <SearchControls
+        error={error}
+        filteredCount={filteredData.length}
+        isPending={isPending}
+        onRefresh={handleRefresh}
+        search={search}
+        setSearch={setSearch}
+        sortOrder={sortOrder}
+        setSortOrder={setSortOrder}
+      />
 
       <section className="space-y-4">
         {filteredData.length > 0 ? (
@@ -129,7 +159,7 @@ export default function ResumesContent({
             <ResumeCard key={cv.id} cv={cv} onPreview={onPreview} />
           ))
         ) : (
-          <EmptyState />
+          <EmptyState error={error} />
         )}
       </section>
 
@@ -142,4 +172,3 @@ export default function ResumesContent({
     </div>
   );
 }
-

@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { useEffect, useCallback, useState, useTransition } from 'react';
+import { useEffect, useEffectEvent, useState, useTransition } from 'react';
 import BurgerBtn from './burguer_btn';
 import { logout } from '@/lib/actions/auth';
 import { createClient } from '@/lib/supabase/client';
@@ -35,7 +36,7 @@ export default function Navbar() {
   const [user, setUser] = useState<NavbarUser | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
 
-  const syncSession = useCallback(async () => {
+  const syncSession = useEffectEvent(async () => {
     const supabase = createClient();
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) {
@@ -50,19 +51,21 @@ export default function Navbar() {
       .eq('supabase_id', session.user.id)
       .single();
     setUserRole((profile?.user_role as UserRole) ?? null);
-  }, []);
+  });
 
   // Re-sync auth whenever the route changes (covers server-action redirects)
-  useEffect(() => { syncSession(); }, [pathname, syncSession]);
+  useEffect(() => {
+    void syncSession();
+  }, [pathname]);
 
   // Also listen for real-time auth events (login/logout from other tabs, token refresh)
   useEffect(() => {
     const supabase = createClient();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      syncSession();
+      void syncSession();
     });
     return () => { subscription.unsubscribe(); };
-  }, [syncSession]);
+  }, []);
 
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href);
@@ -78,8 +81,22 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 bg-brand-50/80 backdrop-blur">
       <nav className="relative mx-auto min-h-14 lg:min-h-[7vh] px-4 py-1 flex items-center lg:mx-[5vw]">
         <Link href="/" className="h-full shrink-0 sm:shrink basis-[200px] sm:basis-60 md:basis-[200px]">
-          <img src="/logo-eusse-completo.png" alt="Eusse" className="h-full max-h-14 w-auto object-contain transition-[height] duration-200 hidden sm:block" />
-          <img src="/logo-eusse-peq.png"      alt="Eusse" className="h-full max-h-14 w-auto object-contain transition-[height] duration-200 block sm:hidden" />
+          <Image
+            src="/logo-eusse-completo.png"
+            alt="Eusse"
+            width={240}
+            height={56}
+            className="h-full max-h-14 w-auto object-contain transition-[height] duration-200 hidden sm:block"
+            priority
+          />
+          <Image
+            src="/logo-eusse-peq.png"
+            alt="Eusse"
+            width={56}
+            height={56}
+            className="h-full max-h-14 w-auto object-contain transition-[height] duration-200 block sm:hidden"
+            priority
+          />
         </Link>
 
         <div className="flex-1" />

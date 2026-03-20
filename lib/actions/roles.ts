@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/server';
 import { sendEmail, buildInviteEmailHtml } from '@/lib/mail';
 import type { UserRole } from '@/types/auth';
 
-// Types
 export interface ActionResult {
   error?: string;
   success?: boolean;
@@ -32,13 +31,21 @@ export interface UserInviteData {
   creator_name?: string;
 }
 
-// Helpers
-const handleSupabaseError = (error: any, context: string): ActionResult => {
+type SupabaseClient = NonNullable<Awaited<ReturnType<typeof createClient>>>;
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return 'Error inesperado';
+}
+
+const handleSupabaseError = (error: unknown, context: string): ActionResult => {
   console.error(`Error in ${context}:`, error);
-  return { error: error.message || 'Error inesperado' };
+  return { error: getErrorMessage(error) };
 };
 
-const validateSupabaseClient = async () => {
+const validateSupabaseClient = async (): Promise<SupabaseClient> => {
   const supabase = await createClient();
   if (!supabase) {
     throw new Error('Error de configuración del servidor');
@@ -46,44 +53,54 @@ const validateSupabaseClient = async () => {
   return supabase;
 };
 
-const getCurrentUserProfile = async (supabase: any) => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Usuario no autenticado');
-  
+const getCurrentUserProfile = async (supabase: SupabaseClient) => {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error('Usuario no autenticado');
+  }
+
   const { data: profile } = await supabase
     .from('user_profile')
     .select('id')
     .eq('supabase_id', user.id)
     .single();
-    
-  if (!profile) throw new Error('Perfil de usuario no encontrado');
+
+  if (!profile) {
+    throw new Error('Perfil de usuario no encontrado');
+  }
+
   return profile;
 };
 
-/**
- * Obtiene todos los usuarios con rol hr o admin
- */
 export async function getAdminUsers(): Promise<{ data: UserProfileData[] | null; error?: string }> {
   try {
     const supabase = await validateSupabaseClient();
-    
+
     const { data: profiles, error } = await supabase
       .from('user_profile')
       .select('*')
       .in('user_role', ['hr', 'admin'])
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      throw error;
+    }
 
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
-    
-    const usersWithEmail: UserProfileData[] = profiles?.map(profile => ({
+    const {
+      data: { user: currentUser },
+    } = await supabase.auth.getUser();
+
+    const usersWithEmail: UserProfileData[] = profiles?.map((profile) => ({
       id: profile.id,
       supabase_id: profile.supabase_id,
       name: profile.name || 'Sin nombre',
-      email: currentUser?.id === profile.supabase_id 
-        ? currentUser?.email || '' 
-        : `user-${profile.id.slice(0, 8)}@empresa.com`,
+      email:
+        currentUser?.id === profile.supabase_id
+          ? currentUser?.email || ''
+          : `user-${profile.id.slice(0, 8)}@empresa.com`,
       user_role: profile.user_role,
       is_active: profile.is_active,
       created_at: profile.created_at,
@@ -95,9 +112,6 @@ export async function getAdminUsers(): Promise<{ data: UserProfileData[] | null;
   }
 }
 
-/**
- * Obtiene todas las invitaciones pendientes
- */
 export async function getInvites(): Promise<{ data: UserInviteData[] | null; error?: string }> {
   try {
     const supabase = await validateSupabaseClient();
@@ -107,9 +121,11 @@ export async function getInvites(): Promise<{ data: UserInviteData[] | null; err
       .select('*, creator:created_by (name)')
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      throw error;
+    }
 
-    const mappedInvites: UserInviteData[] = invites?.map(invite => ({
+    const mappedInvites: UserInviteData[] = invites?.map((invite) => ({
       id: invite.id,
       email: invite.email,
       role: invite.role,
@@ -126,13 +142,10 @@ export async function getInvites(): Promise<{ data: UserInviteData[] | null; err
   }
 }
 
-/**
- * Crea una nueva invitación para un usuario hr o admin
- */
 export async function createInvite(formData: FormData): Promise<ActionResult> {
   try {
     const supabase = await validateSupabaseClient();
-    
+
     const email = formData.get('email') as string;
     const role = formData.get('role') as UserRole;
 
@@ -146,7 +159,6 @@ export async function createInvite(formData: FormData): Promise<ActionResult> {
 
     const currentProfile = await getCurrentUserProfile(supabase);
 
-    // Verificar invitación existente
     const { data: existingInvite } = await supabase
       .from('user_invite')
       .select('id')
@@ -164,9 +176,10 @@ export async function createInvite(formData: FormData): Promise<ActionResult> {
       .select('token')
       .single();
 
-    if (error) throw error;
+    if (error) {
+      throw error;
+    }
 
-    // Send invite email via Mailgun
     if (inserted?.token) {
       const html = await buildInviteEmailHtml(email, role, inserted.token);
       const mailResult = await sendEmail({
@@ -174,6 +187,7 @@ export async function createInvite(formData: FormData): Promise<ActionResult> {
         subject: 'Invitación al Portal de Empleo Eusse',
         html,
       });
+
       if (!mailResult.success) {
         console.error('Failed to send invite email:', mailResult.error);
       }
@@ -186,9 +200,6 @@ export async function createInvite(formData: FormData): Promise<ActionResult> {
   }
 }
 
-/**
- * Actualiza el rol de un usuario
- */
 export async function updateUserRole(userId: string, newRole: UserRole): Promise<ActionResult> {
   try {
     const supabase = await validateSupabaseClient();
@@ -202,7 +213,9 @@ export async function updateUserRole(userId: string, newRole: UserRole): Promise
       .update({ user_role: newRole })
       .eq('id', userId);
 
-    if (error) throw error;
+    if (error) {
+      throw error;
+    }
 
     revalidatePath('/dashboard/configuracion');
     return { success: true };
@@ -211,9 +224,6 @@ export async function updateUserRole(userId: string, newRole: UserRole): Promise
   }
 }
 
-/**
- * Activa o desactiva un usuario
- */
 export async function toggleUserStatus(userId: string, isActive: boolean): Promise<ActionResult> {
   try {
     const supabase = await validateSupabaseClient();
@@ -223,7 +233,9 @@ export async function toggleUserStatus(userId: string, isActive: boolean): Promi
       .update({ is_active: isActive })
       .eq('id', userId);
 
-    if (error) throw error;
+    if (error) {
+      throw error;
+    }
 
     revalidatePath('/dashboard/configuracion');
     return { success: true };
@@ -232,9 +244,6 @@ export async function toggleUserStatus(userId: string, isActive: boolean): Promi
   }
 }
 
-/**
- * Elimina una invitación
- */
 export async function deleteInvite(inviteId: string): Promise<ActionResult> {
   try {
     const supabase = await validateSupabaseClient();
@@ -244,7 +253,9 @@ export async function deleteInvite(inviteId: string): Promise<ActionResult> {
       .delete()
       .eq('id', inviteId);
 
-    if (error) throw error;
+    if (error) {
+      throw error;
+    }
 
     revalidatePath('/dashboard/configuracion');
     return { success: true };
@@ -253,14 +264,10 @@ export async function deleteInvite(inviteId: string): Promise<ActionResult> {
   }
 }
 
-/**
- * Reenvía una invitación (crea una nueva con el mismo email)
- */
 export async function resendInvite(inviteId: string): Promise<ActionResult> {
   try {
     const supabase = await validateSupabaseClient();
 
-    // Obtener la invitación original
     const { data: originalInvite, error: fetchError } = await supabase
       .from('user_invite')
       .select('email, role, created_by')
@@ -271,7 +278,6 @@ export async function resendInvite(inviteId: string): Promise<ActionResult> {
       return { error: 'Invitación no encontrada' };
     }
 
-    // Eliminar la invitación anterior y crear una nueva
     await supabase.from('user_invite').delete().eq('id', inviteId);
 
     const { data: newInvite, error } = await supabase
@@ -284,9 +290,10 @@ export async function resendInvite(inviteId: string): Promise<ActionResult> {
       .select('token')
       .single();
 
-    if (error) throw error;
+    if (error) {
+      throw error;
+    }
 
-    // Send invite email via Mailgun
     if (newInvite?.token) {
       const html = await buildInviteEmailHtml(originalInvite.email, originalInvite.role, newInvite.token);
       const mailResult = await sendEmail({
@@ -294,6 +301,7 @@ export async function resendInvite(inviteId: string): Promise<ActionResult> {
         subject: 'Invitación al Portal de Empleo Eusse',
         html,
       });
+
       if (!mailResult.success) {
         console.error('Failed to resend invite email:', mailResult.error);
       }

@@ -93,11 +93,6 @@ export default function JobsPageContent({ isAuthenticated, userRole, jobs, compa
   const endIndex = startIndex + jobsPerPage;
   const paginatedJobs = filteredJobs.slice(startIndex, endIndex);
 
-  // Reset a página 1 cuando cambian los filtros
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [search, location, company, sortBy]);
-
   const handleApply = (jobId: number) => {
     setOpenJob(null);
     if (!isAuthenticated) {
@@ -113,6 +108,7 @@ export default function JobsPageContent({ isAuthenticated, userRole, jobs, compa
     setLocation("Todas las ubicaciones");
     setCompany("Todas las empresas");
     setSortBy("recientes");
+    setCurrentPage(1);
   };
 
   return (
@@ -141,7 +137,10 @@ export default function JobsPageContent({ isAuthenticated, userRole, jobs, compa
               <label className="text-xs uppercase tracking-wide text-brand-900/60">Buscar</label>
               <input
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                }}
                 placeholder="Puesto, empresa o palabra clave"
                 className="mt-1 w-full rounded-2xl border border-transparent bg-brand-50 px-3 py-2 text-brand-900 outline-none ring-1 ring-brand-100 focus:ring-2 focus:ring-brand-400/50"
               />
@@ -150,7 +149,10 @@ export default function JobsPageContent({ isAuthenticated, userRole, jobs, compa
               <label className="text-xs uppercase tracking-wide text-brand-900/60">Ubicación</label>
               <select
                 value={location}
-                onChange={(e) => setLocation(e.target.value)}
+                onChange={(e) => {
+                  setLocation(e.target.value);
+                  setCurrentPage(1);
+                }}
                 className="mt-1 w-full rounded-2xl border border-transparent bg-brand-50 px-3 py-2 text-brand-900 outline-none ring-1 ring-brand-100 focus:ring-2 focus:ring-brand-400/50"
               >
                 {["Todas las ubicaciones", ...locations.map((l) => l.name)].map((loc) => (
@@ -162,7 +164,10 @@ export default function JobsPageContent({ isAuthenticated, userRole, jobs, compa
               <label className="text-xs uppercase tracking-wide text-brand-900/60">Empresa</label>
               <select
                 value={company}
-                onChange={(e) => setCompany(e.target.value)}
+                onChange={(e) => {
+                  setCompany(e.target.value);
+                  setCurrentPage(1);
+                }}
                 className="mt-1 w-full rounded-2xl border border-transparent bg-brand-50 px-3 py-2 text-brand-900 outline-none ring-1 ring-brand-100 focus:ring-2 focus:ring-brand-400/50"
               >
                 {["Todas las empresas", ...companies.map((c) => c.name)].map((comp) => (
@@ -176,7 +181,10 @@ export default function JobsPageContent({ isAuthenticated, userRole, jobs, compa
               <label className="text-xs uppercase tracking-wide text-brand-900/60">Ordenar por</label>
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as (typeof sortOptions)[number]["value"])}
+                onChange={(e) => {
+                  setSortBy(e.target.value as (typeof sortOptions)[number]["value"]);
+                  setCurrentPage(1);
+                }}
                 className="mt-1 w-full rounded-2xl border border-transparent bg-brand-50 px-3 py-2 text-brand-900 outline-none ring-1 ring-brand-100 focus:ring-2 focus:ring-brand-400/50"
               >
                 {sortOptions.map((option) => (

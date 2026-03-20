@@ -22,15 +22,35 @@ export interface GeneralCvData {
     id: number;
     position_id: number | null;
     location_id: number | null;
-    position?: { id: number; description: string };
-    location?: { id: number; name: string };
+    position?: { id: number; description: string } | null;
+    location?: { id: number; name: string } | null;
   };
 }
 
-// Helpers
-const handleSupabaseError = (error: any, context: string) => {
+type CandidateData = NonNullable<GeneralCvData['candidate']>;
+type TalentPoolData = NonNullable<GeneralCvData['talent_pool']>;
+
+interface GeneralCvRow extends Omit<GeneralCvData, 'candidate' | 'talent_pool'> {
+  candidate?: CandidateData;
+}
+
+interface TalentPoolCvRow {
+  id: number;
+  position: NonNullable<TalentPoolData['position']>[] | null;
+  location: NonNullable<TalentPoolData['location']>[] | null;
+  cv: GeneralCvRow[] | null;
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return 'Error inesperado';
+}
+
+const handleSupabaseError = (error: unknown, context: string) => {
   console.error(`Error in ${context}:`, error);
-  return { data: null, error: error.message || 'Error inesperado' };
+  return { data: null, error: getErrorMessage(error) };
 };
 
 const validateSupabaseClient = async () => {
@@ -56,19 +76,23 @@ export async function getGeneralCvs(): Promise<{ data: GeneralCvData[] | null; e
       .eq('cv.cv_type', 'general')
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      throw error;
+    }
 
-    const data: GeneralCvData[] = (entries ?? []).map((entry: any) => ({
-      ...entry.cv,
-      candidate: entry.cv.candidate,
-      talent_pool: {
-        id: entry.id,
-        position_id: entry.position?.id ?? null,
-        location_id: entry.location?.id ?? null,
-        position: entry.position ?? null,
-        location: entry.location ?? null,
-      },
-    }));
+    const data: GeneralCvData[] = ((entries ?? []) as unknown as TalentPoolCvRow[])
+      .filter((entry) => entry.cv !== null && entry.cv.length > 0)
+      .map((entry) => ({
+        ...entry.cv![0],
+        candidate: entry.cv?.[0]?.candidate,
+        talent_pool: {
+          id: entry.id,
+          position_id: entry.position?.[0]?.id ?? null,
+          location_id: entry.location?.[0]?.id ?? null,
+          position: entry.position?.[0] ?? null,
+          location: entry.location?.[0] ?? null,
+        },
+      }));
 
     return { data };
   } catch (error) {
@@ -86,7 +110,9 @@ export async function getCvById(cvId: number): Promise<{ data: GeneralCvData | n
       .eq('id', cvId)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      throw error;
+    }
 
     const { data: talentPool } = await supabase
       .from('talent_pool_cv')

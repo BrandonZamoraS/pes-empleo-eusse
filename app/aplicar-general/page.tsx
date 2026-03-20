@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { uploadGeneralCV } from '@/lib/actions/postulant';
 
@@ -11,7 +10,6 @@ interface LocationOption { id: number; name: string }
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
 export default function AplicarGeneralPage() {
-  const router = useRouter();
   const [positions, setPositions] = useState<PositionOption[]>([]);
   const [locations, setLocations] = useState<LocationOption[]>([]);
   const [positionId, setPositionId] = useState('');

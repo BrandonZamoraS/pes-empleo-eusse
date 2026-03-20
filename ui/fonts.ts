@@ -1,25 +1,19 @@
-import { Montserrat, Satisfy } from "next/font/google";
+type FontClass = {
+  className: string;
+};
 
-export const satisfy = Satisfy({
-  subsets: ['latin'],
-  weight: '400',          
-  display: 'swap',
-  variable: '--font-script',
-});
+export const satisfy: FontClass = {
+  className: "font-brand-script",
+};
 
-export const montserratBold = Montserrat({
-  variable: "--font-montserrat",
-  subsets: ["latin"],
-  weight: '800',
-});
+export const montserratBold: FontClass = {
+  className: "font-brand-sans font-extrabold",
+};
 
-export const montserratSemiBold = Montserrat({
-  variable: "--font-montserrat",
-  subsets: ["latin"],
-  weight: '600',
-});
-export const montserrat = Montserrat({
-  variable: "--font-montserrat",
-  subsets: ["latin"],
-  weight: '400',
-});
+export const montserratSemiBold: FontClass = {
+  className: "font-brand-sans font-semibold",
+};
+
+export const montserrat: FontClass = {
+  className: "font-brand-sans",
+};
