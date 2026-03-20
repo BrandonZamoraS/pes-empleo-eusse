@@ -82,7 +82,7 @@ export default function Navbar() {
       <nav className="relative mx-auto min-h-14 lg:min-h-[7vh] px-4 py-1 flex items-center lg:mx-[5vw]">
         <Link href="/" className="h-full shrink-0 sm:shrink basis-[200px] sm:basis-60 md:basis-[200px]">
           <Image
-            src="/logo-eusse-completo.png"
+            src="/logo-eusse-completo.webp"
             alt="Eusse"
             width={240}
             height={56}
@@ -90,7 +90,7 @@ export default function Navbar() {
             priority
           />
           <Image
-            src="/logo-eusse-peq.png"
+            src="/logo-eusse-peq.webp"
             alt="Eusse"
             width={56}
             height={56}
