@@ -14,6 +14,7 @@ import {
 } from "@/lib/actions/applications";
 import { APPLICATION_STATUS_MAP, type ApplicationStatus } from "@/lib/constants";
 import { PROVINCES, CANTONS } from "@/lib/locations";
+import { Skeleton } from "@/ui/components/skeleton";
 
 // Estilos de estado
 const statusStyles: Record<ApplicationStatus, string> = {
@@ -350,6 +351,33 @@ function DetailItem({ label, value }: { label: string; value?: string | number |
   );
 }
 
+function DetailItemsSkeleton() {
+  return (
+    <div className="grid gap-4 md:grid-cols-3">
+      {Array.from({ length: 3 }, (_, index) => (
+        <div key={index} className="rounded-2xl border border-brand-100 bg-brand-50/60 px-4 py-3">
+          <Skeleton className="h-3 w-20 rounded-full" />
+          <Skeleton className="mt-3 h-5 w-28" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DetailSectionSkeleton({ rows = 2 }: { rows?: number }) {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: rows }, (_, index) => (
+        <div key={index} className="rounded-2xl border border-brand-100 bg-brand-50/50 p-4">
+          <Skeleton className="h-4 w-32 rounded-full" />
+          <Skeleton className="mt-3 h-5 w-2/3" />
+          <Skeleton className="mt-2 h-4 w-full" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function getProvinceName(code?: number) {
   const province = PROVINCES.find((p) => p.code === code);
   return province?.name || (code ? `Código ${code}` : "N/D");
@@ -440,11 +468,7 @@ export function ApplicationDetailsModal({
             </div>
           )}
 
-          {isLoading && (
-            <div className="rounded-2xl border border-brand-100 bg-brand-50 px-4 py-3 text-sm text-brand-800">
-              Cargando detalles...
-            </div>
-          )}
+          {isLoading && <DetailItemsSkeleton />}
 
           <div className="grid gap-4 md:grid-cols-3">
             <DetailItem label="Aplicación" value={formatDate(app.created_at, { year: "numeric", month: "short", day: "2-digit" })} />
@@ -471,11 +495,11 @@ export function ApplicationDetailsModal({
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-semibold text-brand-900">Experiencia laboral</h4>
               <span className="text-xs text-brand-900/60">
-                {isLoading ? "Cargando..." : `${app.work_experience?.length || 0} registros`}
+                {isLoading ? "..." : `${app.work_experience?.length || 0} registros`}
               </span>
             </div>
             {isLoading ? (
-              <p className="text-sm text-brand-900/60">Cargando detalles de experiencia...</p>
+              <DetailSectionSkeleton />
             ) : app.work_experience && app.work_experience.length > 0 ? (
               <div className="space-y-3">
                 {app.work_experience.map((exp) => (
@@ -505,11 +529,11 @@ export function ApplicationDetailsModal({
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-semibold text-brand-900">Educación</h4>
               <span className="text-xs text-brand-900/60">
-                {isLoading ? "Cargando..." : `${app.education?.length || 0} registros`}
+                {isLoading ? "..." : `${app.education?.length || 0} registros`}
               </span>
             </div>
             {isLoading ? (
-              <p className="text-sm text-brand-900/60">Cargando educación...</p>
+              <DetailSectionSkeleton />
             ) : app.education && app.education.length > 0 ? (
               <div className="space-y-3">
                 {app.education.map((edu) => (
@@ -538,7 +562,7 @@ export function ApplicationDetailsModal({
           <section className="space-y-3">
             <h4 className="text-sm font-semibold text-brand-900">Preguntas adicionales</h4>
             {isLoading ? (
-              <p className="text-sm text-brand-900/60">Cargando respuestas...</p>
+              <DetailSectionSkeleton rows={3} />
             ) : (
               <QuestionsAnswers answers={app.answers || []} />
             )}
@@ -546,7 +570,7 @@ export function ApplicationDetailsModal({
 
           <section className="space-y-3">
             {isLoading ? (
-              <p className="text-sm text-brand-900/60">Cargando notas...</p>
+              <DetailSectionSkeleton rows={2} />
             ) : (
               <NotesThread
                 notes={app.notes || []}

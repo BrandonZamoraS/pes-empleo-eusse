@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { uploadGeneralCV } from '@/lib/actions/postulant';
+import { Skeleton } from '@/ui/components/skeleton';
 
 interface PositionOption { id: number; description: string }
 interface LocationOption { id: number; name: string }
@@ -18,9 +19,11 @@ export default function AplicarGeneralPage() {
   const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [optionsLoading, setOptionsLoading] = useState(true);
 
   useEffect(() => {
     const fetchOptions = async () => {
+      setOptionsLoading(true);
       try {
         const [posRes, locRes] = await Promise.all([
           fetch('/api/jobs?type=positions'),
@@ -32,9 +35,11 @@ export default function AplicarGeneralPage() {
         setLocations(locData.data ?? []);
       } catch {
         console.error('Error cargando opciones');
+      } finally {
+        setOptionsLoading(false);
       }
     };
-    fetchOptions();
+    void fetchOptions();
   }, []);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -114,36 +119,44 @@ export default function AplicarGeneralPage() {
           <div>
             <label className="block text-sm text-brand-900/70">
               Posición de interés
-              <select
-                required
-                value={positionId}
-                onChange={(e) => setPositionId(e.target.value)}
-                disabled={loading}
-                className="mt-1 w-full rounded-2xl border border-transparent bg-brand-50 px-3 py-2 text-brand-900 outline-none focus:ring-2 focus:ring-brand-400/40"
-              >
-                <option value="">Selecciona una posición</option>
-                {positions.map((p) => (
-                  <option key={p.id} value={p.id}>{p.description}</option>
-                ))}
-              </select>
+              {optionsLoading ? (
+                <Skeleton className="mt-1 h-11 w-full" />
+              ) : (
+                <select
+                  required
+                  value={positionId}
+                  onChange={(e) => setPositionId(e.target.value)}
+                  disabled={loading}
+                  className="mt-1 w-full rounded-2xl border border-transparent bg-brand-50 px-3 py-2 text-brand-900 outline-none focus:ring-2 focus:ring-brand-400/40"
+                >
+                  <option value="">Selecciona una posición</option>
+                  {positions.map((p) => (
+                    <option key={p.id} value={p.id}>{p.description}</option>
+                  ))}
+                </select>
+              )}
             </label>
           </div>
 
           <div>
             <label className="block text-sm text-brand-900/70">
               Ubicación preferida
-              <select
-                required
-                value={locationId}
-                onChange={(e) => setLocationId(e.target.value)}
-                disabled={loading}
-                className="mt-1 w-full rounded-2xl border border-transparent bg-brand-50 px-3 py-2 text-brand-900 outline-none focus:ring-2 focus:ring-brand-400/40"
-              >
-                <option value="">Selecciona una ubicación</option>
-                {locations.map((l) => (
-                  <option key={l.id} value={l.id}>{l.name}</option>
-                ))}
-              </select>
+              {optionsLoading ? (
+                <Skeleton className="mt-1 h-11 w-full" />
+              ) : (
+                <select
+                  required
+                  value={locationId}
+                  onChange={(e) => setLocationId(e.target.value)}
+                  disabled={loading}
+                  className="mt-1 w-full rounded-2xl border border-transparent bg-brand-50 px-3 py-2 text-brand-900 outline-none focus:ring-2 focus:ring-brand-400/40"
+                >
+                  <option value="">Selecciona una ubicación</option>
+                  {locations.map((l) => (
+                    <option key={l.id} value={l.id}>{l.name}</option>
+                  ))}
+                </select>
+              )}
             </label>
           </div>
 

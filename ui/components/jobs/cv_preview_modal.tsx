@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { getCVDownloadUrl } from "@/lib/actions/postulant";
+import { Skeleton } from "@/ui/components/skeleton";
 
 interface CVPreviewModalProps {
   isOpen: boolean;
@@ -95,11 +96,12 @@ export default function CVPreviewModal({ isOpen, onClose, cvId, cvMimeType }: CV
         {/* Content */}
         <div className="flex-1 overflow-hidden bg-gray-100">
           {loading && (
-            <div className="flex items-center justify-center h-full">
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-10 h-10 border-4 border-brand-200 border-t-brand-500 rounded-full animate-spin" />
-                <p className="text-sm text-brand-600">Cargando CV...</p>
+            <div className="flex h-full flex-col gap-6 p-6">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-10 w-40" />
+                <Skeleton className="h-10 w-24" />
               </div>
+              <Skeleton className="h-full w-full rounded-3xl bg-white" />
             </div>
           )}
 

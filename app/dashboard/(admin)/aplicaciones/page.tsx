@@ -9,6 +9,7 @@ import {
   getApplicationById,
 } from "@/lib/actions/applications";
 import { APPLICATION_STATUS_MAP, type ApplicationStatus } from "@/lib/constants";
+import { Skeleton } from "@/ui/components/skeleton";
 
 const statusOptions: (ApplicationStatus | "all")[] = [
   "all",
@@ -19,6 +20,51 @@ const statusOptions: (ApplicationStatus | "all")[] = [
 ];
 
 const PAGE_SIZE = 10;
+
+function ApplicationsSkeleton() {
+  return (
+    <div className="space-y-6 text-brand-900">
+      <section className="rounded-3xl border border-transparent bg-white p-6 shadow-[0_25px_70px_rgba(0,0,0,0.06)]">
+        <div className="grid gap-4 md:grid-cols-4">
+          <Skeleton className="h-11 w-full md:col-span-2" />
+          <Skeleton className="h-11 w-full" />
+          <Skeleton className="h-11 w-full" />
+        </div>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Skeleton className="h-8 w-28 rounded-full" />
+          <Skeleton className="h-8 w-44 rounded-full" />
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        {Array.from({ length: 5 }, (_, index) => (
+          <div
+            key={index}
+            className="rounded-3xl border border-transparent bg-white p-6 shadow-[0_20px_60px_rgba(0,0,0,0.05)]"
+          >
+            <Skeleton className="h-4 w-32 rounded-full" />
+            <Skeleton className="mt-3 h-7 w-2/3" />
+            <Skeleton className="mt-4 h-4 w-full" />
+            <Skeleton className="mt-2 h-4 w-4/5" />
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Skeleton className="h-9 w-28" />
+              <Skeleton className="h-9 w-28" />
+              <Skeleton className="h-9 w-36" />
+            </div>
+          </div>
+        ))}
+      </section>
+
+      <div className="flex items-center justify-between rounded-2xl border border-brand-100 bg-white px-4 py-3 shadow-[0_12px_30px_rgba(0,0,0,0.05)]">
+        <Skeleton className="h-4 w-44 rounded-full" />
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-9 w-24" />
+          <Skeleton className="h-9 w-24" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function ApplicationsPage() {
   const [applications, setApplications] = useState<ApplicationData[]>([]);
@@ -120,11 +166,7 @@ export default function ApplicationsPage() {
   const canNext = page < totalPages;
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-brand-900/60">Cargando postulaciones...</div>
-      </div>
-    );
+    return <ApplicationsSkeleton />;
   }
 
   if (error) {

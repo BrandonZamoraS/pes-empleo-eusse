@@ -6,6 +6,7 @@ import JobCardRecruiterReal from "@/ui/components/jobs/job_card_recruiter";
 import JobFormModal from "@/ui/components/jobs/job_form_model";
 import { fetchJobsDataClient } from "@/lib/actions/jobs.client";
 import type { JobData, JobStatus, CompanyData, LocationData } from "@/types/jobs";
+import { Skeleton } from "@/ui/components/skeleton";
 
 const statusOptions: (JobStatus | "all")[] = ["all", "draft", "pending", "active", "paused", "closed"];
 
@@ -17,6 +18,53 @@ const STATUS_DISPLAY: Record<JobStatus | "all", string> = {
   paused: "Pausado",
   closed: "Cerrado",
 };
+
+function RecruiterJobsSkeleton() {
+  return (
+    <div className="space-y-6 text-brand-900">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="space-y-3">
+          <Skeleton className="h-8 w-60" />
+          <Skeleton className="h-4 w-80 max-w-full" />
+        </div>
+        <Skeleton className="h-11 w-36" />
+      </div>
+
+      <section className="rounded-3xl border border-transparent bg-white p-6 shadow-[0_25px_70px_rgba(0,0,0,0.06)]">
+        <div className="grid gap-4 md:grid-cols-5">
+          <Skeleton className="h-11 w-full md:col-span-2" />
+          <Skeleton className="h-11 w-full" />
+          <Skeleton className="h-11 w-full" />
+          <Skeleton className="h-11 w-full" />
+        </div>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Skeleton className="h-8 w-28 rounded-full" />
+          <Skeleton className="h-8 w-28 rounded-full" />
+          <Skeleton className="h-8 w-24 rounded-full" />
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        {Array.from({ length: 4 }, (_, index) => (
+          <div
+            key={index}
+            className="rounded-3xl border border-transparent bg-white p-6 shadow-[0_20px_60px_rgba(0,0,0,0.05)]"
+          >
+            <Skeleton className="h-4 w-28 rounded-full" />
+            <Skeleton className="mt-3 h-8 w-2/3" />
+            <Skeleton className="mt-4 h-4 w-full" />
+            <Skeleton className="mt-2 h-4 w-5/6" />
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Skeleton className="h-10 w-32" />
+              <Skeleton className="h-10 w-36" />
+              <Skeleton className="h-10 w-28" />
+            </div>
+          </div>
+        ))}
+      </section>
+    </div>
+  );
+}
 
 export default function RecruiterJobsPage() {
   const router = useRouter();
@@ -109,11 +157,7 @@ export default function RecruiterJobsPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-brand-900/60">Cargando ofertas...</div>
-      </div>
-    );
+    return <RecruiterJobsSkeleton />;
   }
 
   if (error) {

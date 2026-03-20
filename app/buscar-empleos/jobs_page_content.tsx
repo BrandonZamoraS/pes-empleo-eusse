@@ -7,6 +7,7 @@ import JobCard from "@/ui/components/jobs/job_card";
 import JobModal from "@/ui/components/jobs/job_modal";
 import type { JobData, CompanyData, LocationData } from "@/types/jobs";
 import type { UserRole } from "@/types/auth";
+import { Skeleton } from "@/ui/components/skeleton";
 
 const sortOptions = [
   { value: "recientes", label: "Más recientes" },
@@ -301,7 +302,12 @@ export default function JobsPageContent({ isAuthenticated, userRole, jobs, compa
             </p>
           </div>
           <div className="px-6 py-6">
-            {isPostulant && hasGeneralCv === false ? (
+            {isPostulant && hasGeneralCv === null ? (
+              <div className="space-y-3">
+                <Skeleton className="h-12 w-full bg-white/20" />
+                <Skeleton className="h-4 w-3/4 bg-white/20" />
+              </div>
+            ) : isPostulant && hasGeneralCv === false ? (
               <Link
                 href="/aplicar-general"
                 className="inline-flex w-full items-center justify-center rounded-2xl border border-transparent bg-brand-400 px-5 py-3 text-base font-semibold text-brand-50 shadow-[0_25px_60px_rgba(0,0,0,0.2)] transition hover:bg-brand-400/90"

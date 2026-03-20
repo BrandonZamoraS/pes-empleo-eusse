@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { PROVINCES } from "@/lib/locations";
 import { APPLICATION_STATUS_MAP, type ApplicationStatus } from "@/lib/constants";
+import { Skeleton } from "@/ui/components/skeleton";
 
 type MetricsResponse = {
   totalApplications: number;
@@ -30,10 +31,65 @@ const formatHours = (hours: number | null | undefined) => {
   return `${hours.toFixed(1)} h`;
 };
 
+function MetricsSkeleton() {
+  return (
+    <>
+      <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }, (_, index) => (
+          <div
+            key={index}
+            className="rounded-2xl border border-transparent bg-white p-5 shadow-[0_20px_60px_rgba(0,0,0,0.05)]"
+          >
+            <Skeleton className="h-4 w-28 rounded-full" />
+            <Skeleton className="mt-3 h-10 w-20" />
+            <Skeleton className="mt-3 h-4 w-full" />
+          </div>
+        ))}
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }, (_, index) => (
+          <div
+            key={index}
+            className="rounded-2xl border border-transparent bg-white p-5 shadow-[0_20px_60px_rgba(0,0,0,0.05)]"
+          >
+            <Skeleton className="h-4 w-32 rounded-full" />
+            <Skeleton className="mt-3 h-10 w-24" />
+            <Skeleton className="mt-3 h-4 w-full" />
+          </div>
+        ))}
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-2">
+        {Array.from({ length: 2 }, (_, index) => (
+          <div
+            key={index}
+            className="rounded-3xl border border-transparent bg-white p-6 shadow-[0_25px_70px_rgba(0,0,0,0.06)]"
+          >
+            <Skeleton className="h-7 w-52" />
+            <Skeleton className="mt-3 h-4 w-48" />
+            <div className="mt-6 space-y-4">
+              {Array.from({ length: 4 }, (_, innerIndex) => (
+                <div key={innerIndex}>
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-4 w-28 rounded-full" />
+                    <Skeleton className="h-4 w-20 rounded-full" />
+                  </div>
+                  <Skeleton className="mt-2 h-2 w-full rounded-full" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </section>
+    </>
+  );
+}
+
 export default function MetricsContent() {
   const [range, setRange] = useState("30");
   const [data, setData] = useState<MetricsResponse | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -55,7 +111,7 @@ export default function MetricsContent() {
         setLoading(false);
       }
     };
-    fetchMetrics();
+    void fetchMetrics();
   }, [range]);
 
   const provinceNames = useMemo(
@@ -84,11 +140,7 @@ export default function MetricsContent() {
         </select>
       </section>
 
-      {loading && (
-        <div className="rounded-3xl border border-dashed border-brand-200 bg-white p-6 text-sm text-brand-900/70 shadow-[0_20px_60px_rgba(0,0,0,0.05)]">
-          Cargando métricas...
-        </div>
-      )}
+      {loading && <MetricsSkeleton />}
 
       {error && (
         <div className="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700 shadow-[0_20px_60px_rgba(0,0,0,0.05)]">
