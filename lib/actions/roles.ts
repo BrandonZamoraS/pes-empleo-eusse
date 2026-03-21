@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { sendEmail, buildInviteEmailHtml } from '@/lib/mail';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { mapAdminProfilesWithEmails, type AdminProfileRecord } from '@/lib/actions/role_user_mappers';
 import type { UserRole } from '@/types/auth';
 
 export interface ActionResult {
@@ -78,6 +80,7 @@ const getCurrentUserProfile = async (supabase: SupabaseClient) => {
 export async function getAdminUsers(): Promise<{ data: UserProfileData[] | null; error?: string }> {
   try {
     const supabase = await validateSupabaseClient();
+    const adminClient = createAdminClient();
 
     const { data: profiles, error } = await supabase
       .from('user_profile')
@@ -93,18 +96,31 @@ export async function getAdminUsers(): Promise<{ data: UserProfileData[] | null;
       data: { user: currentUser },
     } = await supabase.auth.getUser();
 
-    const usersWithEmail: UserProfileData[] = profiles?.map((profile) => ({
-      id: profile.id,
-      supabase_id: profile.supabase_id,
-      name: profile.name || 'Sin nombre',
-      email:
-        currentUser?.id === profile.supabase_id
-          ? currentUser?.email || ''
-          : `user-${profile.id.slice(0, 8)}@empresa.com`,
-      user_role: profile.user_role,
-      is_active: profile.is_active,
-      created_at: profile.created_at,
-    })) || [];
+    const authEmailsById = new Map<string, string>();
+
+    if (adminClient) {
+      const { data: authUsers, error: authError } = await adminClient.auth.admin.listUsers({
+        page: 1,
+        perPage: 200,
+      });
+
+      if (authError) {
+        console.error('Error fetching auth users:', authError);
+      } else {
+        for (const authUser of authUsers.users) {
+          if (authUser.id && authUser.email) {
+            authEmailsById.set(authUser.id, authUser.email);
+          }
+        }
+      }
+    }
+
+    const usersWithEmail: UserProfileData[] = mapAdminProfilesWithEmails(
+      (profiles ?? []) as AdminProfileRecord[],
+      currentUser?.id,
+      currentUser?.email,
+      authEmailsById,
+    );
 
     return { data: usersWithEmail };
   } catch (error) {
