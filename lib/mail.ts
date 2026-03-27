@@ -112,14 +112,15 @@ export async function sendEmail({ to, subject, html }: SendEmailOptions): Promis
 
     if (!response.ok) {
       const text = await response.text();
-      console.error('Mailgun error:', buildMailgunErrorDetails({
+      const details = buildMailgunErrorDetails({
         status: response.status,
         apiBaseUrl: config.apiBaseUrl,
         domain: config.domain,
         from: config.from,
         body: text,
-      }));
-      return { success: false, error: 'Error al enviar el correo' };
+      });
+      console.error('Mailgun error:', details);
+      return { success: false, error: details.hint ?? 'Error al enviar el correo' };
     }
 
     return { success: true };
