@@ -131,8 +131,15 @@ export async function GET(request: Request) {
       console.error('[auth/callback] Error de exchangeCodeForSession:', error);
     }
   } else {
-    // Para depuración, veamos qué Search Params llegaron
-    console.error('[auth/callback] Entró al callback pero no hay code en Search Params. Request URL:', request.url);
+    // Puede llegar aquí con tokens en hash (#access_token), que el servidor no puede leer.
+    // Reenviamos a /auth/invite para que el cliente procese esos tokens.
+    const inviteRedirect = new URL(`${origin}/auth/invite`);
+    if (safePath) {
+      inviteRedirect.searchParams.set('next', safePath);
+    }
+
+    console.error('[auth/callback] Entró sin code, redirigiendo a /auth/invite para procesamiento cliente. Request URL:', request.url);
+    return NextResponse.redirect(inviteRedirect.toString());
   }
 
   console.error('[auth/callback] Redirigiendo a /login?error=auth_callback_error');
