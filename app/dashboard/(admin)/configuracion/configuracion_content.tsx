@@ -3,7 +3,6 @@
 import { useState } from "react";
 import {
   type UserProfileData,
-  type UserInviteData,
 } from "@/lib/actions/roles";
 import {
   createCompany,
@@ -27,7 +26,6 @@ import CrudTab from "./components/CrudTab";
 
 interface ConfiguracionContentProps {
   initialUsers: UserProfileData[];
-  initialInvites: UserInviteData[];
   initialCompanies: CompanyData[];
   initialLocations: LocationData[];
   initialPositions: PositionData[];
@@ -83,7 +81,6 @@ function TabNavigation({ activeTab, onChange }: TabNavigationProps) {
 
 export default function ConfiguracionContent({
   initialUsers,
-  initialInvites,
   initialCompanies,
   initialLocations,
   initialPositions,
@@ -91,7 +88,6 @@ export default function ConfiguracionContent({
 }: ConfiguracionContentProps) {
   // State
   const [users, setUsers] = useState<UserProfileData[]>(initialUsers);
-  const [invites, setInvites] = useState<UserInviteData[]>(initialInvites);
   const [companies, setCompanies] = useState<CompanyData[]>(initialCompanies);
   const [locations, setLocations] = useState<LocationData[]>(initialLocations);
   const [positions, setPositions] = useState<PositionData[]>(initialPositions);
@@ -109,11 +105,9 @@ export default function ConfiguracionContent({
       {activeTab === "roles" && (
         <RolesTab
           users={users}
-          invites={invites}
           currentUserProfileId={currentUserProfileId}
           onShowMessage={(type, message) => type === "error" ? showError(message) : showSuccess(message)}
           onUpdateUsers={setUsers}
-          onUpdateInvites={setInvites}
         />
       )}
 

@@ -1,8 +1,6 @@
 import { getCurrentUser } from '@/lib/supabase/server';
 import {
   getAdminUsers,
-  getInvites,
-  type UserInviteData,
   type UserProfileData,
 } from '@/lib/actions/roles';
 import {
@@ -27,23 +25,20 @@ export default async function ConfiguracionDashboardPage() {
   }
 
   let initialUsers: UserProfileData[] = [];
-  let initialInvites: UserInviteData[] = [];
   let initialCompanies: CompanyData[] = [];
   let initialLocations: LocationData[] = [];
   let initialPositions: PositionData[] = [];
 
   try {
-    const [usersResult, invitesResult, companiesResult, locationsResult, positionsResult] =
+    const [usersResult, companiesResult, locationsResult, positionsResult] =
       await Promise.all([
         getAdminUsers(),
-        getInvites(),
         getCompanies(),
         getLocations(),
         getPositions(),
       ]);
 
     initialUsers = usersResult.data || [];
-    initialInvites = invitesResult.data || [];
     initialCompanies = companiesResult.data || [];
     initialLocations = locationsResult.data || [];
     initialPositions = positionsResult.data || [];
@@ -58,7 +53,6 @@ export default async function ConfiguracionDashboardPage() {
   return (
     <ConfiguracionContent
       initialUsers={initialUsers}
-      initialInvites={initialInvites}
       initialCompanies={initialCompanies}
       initialLocations={initialLocations}
       initialPositions={initialPositions}

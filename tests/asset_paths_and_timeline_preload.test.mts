@@ -31,7 +31,7 @@ function run() {
   const footerSource = readFileSync(path.join(repoRoot, "ui", "components", "footer.tsx"), "utf8");
   const careerSectionSource = readFileSync(path.join(repoRoot, "ui", "components", "home", "career_section.tsx"), "utf8");
   const quienesSomosSource = readFileSync(path.join(repoRoot, "app", "quienes-somos", "page.tsx"), "utf8");
-  const loginSource = readFileSync(path.join(repoRoot, "app", "login", "page.tsx"), "utf8");
+  const loginSource = readFileSync(path.join(repoRoot, "app", "login", "login_content.tsx"), "utf8");
   const recoverSource = readFileSync(path.join(repoRoot, "app", "recuperar", "page.tsx"), "utf8");
   const registerSource = readFileSync(path.join(repoRoot, "app", "registro", "page.tsx"), "utf8");
   const timelineSource = readFileSync(path.join(repoRoot, "ui", "components", "about", "timeline_section.tsx"), "utf8");

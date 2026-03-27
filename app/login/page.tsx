@@ -1,5 +1,5 @@
 import LoginContent from "./login_content";
-import { getSafeInternalPath } from "@/lib/invite_registration_utils";
+import { getSafeInternalPath } from "@/lib/auth/safe_redirect";
 
 type SearchParams = Promise<{
   error?: string;

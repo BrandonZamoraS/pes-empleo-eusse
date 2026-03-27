@@ -1,18 +1,14 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@/lib/supabase/server';
-import { createAdminClient } from '@/lib/supabase/admin';
+import {
+  buildAdminUserCreatePayload,
+  parseAdminUserCreationForm,
+} from '@/lib/actions/admin_user_creation';
 import { mapAdminProfilesWithEmails, type AdminProfileRecord } from '@/lib/actions/role_user_mappers';
-import { isAdminInviteRole } from '@/lib/invite_utils';
-import { sendAdminInvite } from '@/lib/invite_delivery';
-import { sendEmail } from '@/lib/mail';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 import type { UserRole } from '@/types/auth';
-
-export interface ActionResult {
-  error?: string;
-  success?: boolean;
-}
 
 export interface UserProfileData {
   id: string;
@@ -24,25 +20,19 @@ export interface UserProfileData {
   created_at: string;
 }
 
-export interface UserInviteData {
-  id: string;
-  email: string;
-  role: UserRole;
-  token: string;
-  accepted_at: string | null;
-  created_at: string;
-  created_by: string;
-  creator_name?: string;
+export interface ActionResult {
+  error?: string;
+  success?: boolean;
+  user?: UserProfileData;
 }
 
 type SupabaseClient = NonNullable<Awaited<ReturnType<typeof createClient>>>;
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     return error.message;
   }
+
   return 'Error inesperado';
 }
 
@@ -56,29 +46,8 @@ const validateSupabaseClient = async (): Promise<SupabaseClient> => {
   if (!supabase) {
     throw new Error('Error de configuracion del servidor');
   }
+
   return supabase;
-};
-
-const getCurrentUserProfile = async (supabase: SupabaseClient) => {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error('Usuario no autenticado');
-  }
-
-  const { data: profile } = await supabase
-    .from('user_profile')
-    .select('id')
-    .eq('supabase_id', user.id)
-    .single();
-
-  if (!profile) {
-    throw new Error('Perfil de usuario no encontrado');
-  }
-
-  return profile;
 };
 
 export async function getAdminUsers(): Promise<{ data: UserProfileData[] | null; error?: string }> {
@@ -132,98 +101,86 @@ export async function getAdminUsers(): Promise<{ data: UserProfileData[] | null;
   }
 }
 
-export async function getInvites(): Promise<{ data: UserInviteData[] | null; error?: string }> {
+export async function createAdminUser(formData: FormData): Promise<ActionResult> {
   try {
-    const supabase = await validateSupabaseClient();
-
-    const { data: invites, error } = await supabase
-      .from('user_invite')
-      .select('*, creator:created_by (name)')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      throw error;
-    }
-
-    const mappedInvites: UserInviteData[] = invites?.map((invite) => ({
-      id: invite.id,
-      email: invite.email,
-      role: invite.role,
-      token: invite.token,
-      accepted_at: invite.accepted_at,
-      created_at: invite.created_at,
-      created_by: invite.created_by,
-      creator_name: invite.creator?.name || 'Sistema',
-    })) || [];
-
-    return { data: mappedInvites };
-  } catch (error) {
-    return { data: null, ...handleSupabaseError(error, 'getInvites') };
-  }
-}
-
-export async function createInvite(formData: FormData): Promise<ActionResult> {
-  try {
-    const supabase = await validateSupabaseClient();
     const adminClient = createAdminClient();
+    const parsed = parseAdminUserCreationForm(formData);
 
-    const email = formData.get('email') as string;
-    const role = formData.get('role') as UserRole;
-
-    if (!email || !role) {
-      return { error: 'Email y rol son requeridos' };
-    }
-
-    if (!isAdminInviteRole(role)) {
-      return { error: 'El rol debe ser hr o admin' };
+    if ('error' in parsed) {
+      return { error: parsed.error };
     }
 
     if (!adminClient) {
-      return { error: 'Falta configurar SUPABASE_SERVICE_ROLE_KEY para enviar invitaciones' };
+      return { error: 'Falta configurar SUPABASE_SERVICE_ROLE_KEY para crear usuarios administrativos' };
     }
 
-    const currentProfile = await getCurrentUserProfile(supabase);
+    const { data: createdUser, error: createUserError } = await adminClient.auth.admin.createUser(
+      buildAdminUserCreatePayload(parsed),
+    );
 
-    const { data: existingInvite } = await supabase
-      .from('user_invite')
+    if (createUserError) {
+      return { error: createUserError.message };
+    }
+
+    const authUser = createdUser.user;
+    if (!authUser) {
+      return { error: 'No se pudo crear el usuario en autenticacion' };
+    }
+
+    const { data: existingProfile, error: existingProfileError } = await adminClient
+      .from('user_profile')
       .select('id')
-      .eq('email', email)
-      .is('accepted_at', null)
+      .eq('supabase_id', authUser.id)
+      .maybeSingle();
+
+    if (existingProfileError) {
+      await adminClient.auth.admin.deleteUser(authUser.id);
+      return { error: existingProfileError.message };
+    }
+
+    const profilePayload = {
+      name: parsed.fullName,
+      user_role: parsed.role,
+      is_active: true,
+    };
+
+    const profileQuery = existingProfile
+      ? adminClient
+          .from('user_profile')
+          .update(profilePayload)
+          .eq('id', existingProfile.id)
+      : adminClient
+          .from('user_profile')
+          .insert({
+            supabase_id: authUser.id,
+            ...profilePayload,
+          });
+
+    const { data: profileRecord, error: profileError } = await profileQuery
+      .select('id, created_at, user_role, is_active')
       .single();
 
-    if (existingInvite) {
-      return { error: 'Ya existe una invitacion pendiente para este email' };
-    }
-
-    const { data: inserted, error } = await supabase
-      .from('user_invite')
-      .insert({ email, role, created_by: currentProfile.id })
-      .select('id')
-      .single();
-
-    if (error) {
-      throw error;
-    }
-
-    const inviteResult = await sendAdminInvite({
-      adminClient,
-      email,
-      role,
-      siteUrl: SITE_URL,
-      mailer: sendEmail,
-    });
-
-    if (inviteResult.error) {
-      if (inserted?.id) {
-        await supabase.from('user_invite').delete().eq('id', inserted.id);
-      }
-      return { error: inviteResult.error };
+    if (profileError) {
+      await adminClient.auth.admin.deleteUser(authUser.id);
+      return { error: profileError.message };
     }
 
     revalidatePath('/dashboard/configuracion');
-    return { success: true };
+
+    return {
+      success: true,
+      user: {
+        id: profileRecord.id,
+        supabase_id: authUser.id,
+        name: parsed.fullName,
+        email: parsed.email,
+        user_role: profileRecord.user_role,
+        is_active: profileRecord.is_active,
+        created_at: profileRecord.created_at,
+      },
+    };
   } catch (error) {
-    return handleSupabaseError(error, 'createInvite');
+    return handleSupabaseError(error, 'createAdminUser');
   }
 }
 
@@ -268,67 +225,5 @@ export async function toggleUserStatus(userId: string, isActive: boolean): Promi
     return { success: true };
   } catch (error) {
     return handleSupabaseError(error, 'toggleUserStatus');
-  }
-}
-
-export async function deleteInvite(inviteId: string): Promise<ActionResult> {
-  try {
-    const supabase = await validateSupabaseClient();
-
-    const { error } = await supabase
-      .from('user_invite')
-      .delete()
-      .eq('id', inviteId);
-
-    if (error) {
-      throw error;
-    }
-
-    revalidatePath('/dashboard/configuracion');
-    return { success: true };
-  } catch (error) {
-    return handleSupabaseError(error, 'deleteInvite');
-  }
-}
-
-export async function resendInvite(inviteId: string): Promise<ActionResult> {
-  try {
-    const supabase = await validateSupabaseClient();
-    const adminClient = createAdminClient();
-
-    if (!adminClient) {
-      return { error: 'Falta configurar SUPABASE_SERVICE_ROLE_KEY para reenviar invitaciones' };
-    }
-
-    const { data: originalInvite, error: fetchError } = await supabase
-      .from('user_invite')
-      .select('email, role')
-      .eq('id', inviteId)
-      .single();
-
-    if (fetchError || !originalInvite) {
-      return { error: 'Invitacion no encontrada' };
-    }
-
-    if (!isAdminInviteRole(originalInvite.role)) {
-      return { error: 'El rol debe ser hr o admin' };
-    }
-
-    const inviteResult = await sendAdminInvite({
-      adminClient,
-      email: originalInvite.email,
-      role: originalInvite.role,
-      siteUrl: SITE_URL,
-      mailer: sendEmail,
-    });
-
-    if (inviteResult.error) {
-      return { error: inviteResult.error };
-    }
-
-    revalidatePath('/dashboard/configuracion');
-    return { success: true };
-  } catch (error) {
-    return handleSupabaseError(error, 'resendInvite');
   }
 }

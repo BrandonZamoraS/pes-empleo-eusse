@@ -13,11 +13,6 @@ interface SendEmailOptions {
   html: string;
 }
 
-interface InviteEmailOptions {
-  role: string;
-  inviteUrl: string;
-}
-
 interface MailgunErrorContext {
   status: number;
   apiBaseUrl: string;
@@ -128,34 +123,4 @@ export async function sendEmail({ to, subject, html }: SendEmailOptions): Promis
     console.error('Error sending email:', error);
     return { success: false, error: 'Error al conectar con el servicio de correo' };
   }
-}
-
-export function buildInviteEmailSubject(role: string): string {
-  const roleName = role === 'admin' ? 'Administrador' : 'RRHH';
-  return `Invitacion al equipo ${roleName}`;
-}
-
-export async function buildInviteEmailHtml({ role, inviteUrl }: InviteEmailOptions): Promise<string> {
-  const roleName = role === 'admin' ? 'Administrador' : 'Recursos Humanos';
-
-  return `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f9fa; padding: 40px 20px;">
-  <div style="max-width: 520px; margin: 0 auto; background: #fff; border-radius: 16px; padding: 40px; box-shadow: 0 4px 24px rgba(0,0,0,0.06);">
-    <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 3px; color: #4f7942; margin: 0;">Portal de Empleo Eusse</p>
-    <h1 style="font-size: 24px; color: #1a2e1a; margin: 12px 0 0;">Invitación al equipo</h1>
-    <p style="color: #4a5a4a; line-height: 1.6; margin-top: 16px;">
-      Has sido invitado/a a unirte al Portal de Empleo de Grupo Empresarial Eusse como <strong>${roleName}</strong>.
-    </p>
-    <a href="${inviteUrl}" style="display: inline-block; margin-top: 24px; padding: 14px 32px; background: #4f7942; color: #fff; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 14px;">
-      Aceptar invitación
-    </a>
-    <p style="margin-top: 24px; font-size: 13px; color: #7a8a7a;">
-      Si no esperabas esta invitación, puedes ignorar este correo.
-    </p>
-  </div>
-</body>
-</html>`;
 }
