@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { buildInviteRegistrationPath } from "@/lib/invite_registration_utils";
+import { getInviteAuthOutcome } from "./invite_auth_logic";
 
 interface InviteAuthContentProps {
   nextPath: string;
@@ -36,48 +37,60 @@ export default function InviteAuthContent({ nextPath }: InviteAuthContentProps) 
     const supabase = createClient();
     let isResolved = false;
 
-    const finishRedirect = async () => {
+    const redirectToOutcome = (outcome: ReturnType<typeof getInviteAuthOutcome>) => {
       if (isResolved) {
         return;
       }
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session) {
-        isResolved = true;
-        router.replace("/login?error=auth_callback_error");
+      if (outcome === "wait") {
         return;
       }
 
       isResolved = true;
+      if (outcome === "error") {
+        router.replace("/login?error=auth_callback_error");
+        return;
+      }
+
       router.replace(buildInviteRegistrationPath(nextPath));
+    };
+
+    const finishRedirect = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      redirectToOutcome(getInviteAuthOutcome({
+        hasSession: Boolean(session),
+        timedOut: false,
+        hasErrored: false,
+      }));
     };
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (isResolved || !session) {
-        return;
-      }
-
-      isResolved = true;
-      router.replace(buildInviteRegistrationPath(nextPath));
+      redirectToOutcome(getInviteAuthOutcome({
+        hasSession: Boolean(session),
+        timedOut: false,
+        hasErrored: false,
+      }));
     });
 
     finishRedirect().catch(() => {
-      if (!isResolved) {
-        isResolved = true;
-        router.replace("/login?error=auth_callback_error");
-      }
+      redirectToOutcome(getInviteAuthOutcome({
+        hasSession: false,
+        timedOut: false,
+        hasErrored: true,
+      }));
     });
 
     const fallbackTimer = window.setTimeout(() => {
-      if (!isResolved) {
-        isResolved = true;
-        router.replace("/login?error=auth_callback_error");
-      }
+      redirectToOutcome(getInviteAuthOutcome({
+        hasSession: false,
+        timedOut: true,
+        hasErrored: false,
+      }));
     }, 4000);
 
     return () => {
