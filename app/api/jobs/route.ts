@@ -16,6 +16,7 @@ import {
   updateJob,
   updateJobStatus,
 } from "@/lib/actions/jobs.server";
+import { buildJobActionFormData } from "@/lib/questions";
 import type { JobStatus, QuestionFormat } from "@/types/jobs";
 
 const STAFF_ROLES = new Set(["hr", "admin"]);
@@ -94,14 +95,7 @@ export async function POST(request: NextRequest) {
 
   switch (action) {
     case "createJob": {
-      const formData = new FormData();
-      for (const [key, value] of Object.entries(payload)) {
-        if (key === "questions") {
-          formData.append(key, JSON.stringify(value));
-        } else if (value !== null && value !== undefined) {
-          formData.append(key, String(value));
-        }
-      }
+      const formData = buildJobActionFormData(payload);
       const result = await createJob(formData);
       return NextResponse.json(result, { status: result.error ? 400 : 200 });
     }
@@ -112,14 +106,7 @@ export async function POST(request: NextRequest) {
       if (!jobId || !formFields) {
         return NextResponse.json({ error: "jobId y formData son requeridos" }, { status: 400 });
       }
-      const formData = new FormData();
-      for (const [key, value] of Object.entries(formFields)) {
-        if (key === "questions") {
-          formData.append(key, JSON.stringify(value));
-        } else if (value !== null && value !== undefined) {
-          formData.append(key, String(value));
-        }
-      }
+      const formData = buildJobActionFormData(formFields);
       const result = await updateJob(jobId, formData);
       return NextResponse.json(result, { status: result.error ? 400 : 200 });
     }

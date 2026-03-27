@@ -35,9 +35,9 @@ export default function FaqPage() {
           <div className="mt-4">
             <a
               className="text-brand-600 underline-offset-4 hover:underline"
-              href="mailto:talento@empresa.cr"
+              href="mailto:info1@grupoeusse.com"
             >
-              talento@empresa.cr
+              info1@grupoeusse.com
             </a>
           </div>
         </div>

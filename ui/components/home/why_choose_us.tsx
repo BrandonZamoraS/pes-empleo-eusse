@@ -13,12 +13,6 @@ const benefits: Benefit[] = [
     statLabel: "Satisfacción del equipo",
   },
   {
-    title: "Crecimiento profesional",
-    description: "Accedé a programas de aprendizaje continuo y rutas claras para avanzar dentro del grupo.",
-    stat: "80%",
-    statLabel: "Promociones internas",
-  },
-  {
     title: "Equilibrio vida-trabajo",
     description: "Disfrutá de horarios flexibles, programas de bienestar y beneficios integrales.",
     stat: "4.8/5",
@@ -39,7 +33,13 @@ export function WhyChooseUs() {
           </p>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-3">
+        <div
+          className={`grid gap-8 ${
+            benefits.length === 2
+              ? "mx-auto max-w-4xl md:grid-cols-2"
+              : "md:grid-cols-3"
+          }`}
+        >
           {benefits.map(({ title, description, stat, statLabel }) => (
             <div
               key={title}

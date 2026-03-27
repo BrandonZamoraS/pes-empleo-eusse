@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { validateQuestionAnswer } from '@/lib/questions';
 import { createClient, getCurrentUser } from '@/lib/supabase/server';
 import type { QuestionFormat } from '@/types/jobs';
 
@@ -607,6 +608,10 @@ export async function saveJobAnswers(formData: FormData): Promise<ActionResult> 
 
   for (const answer of answers) {
     const info = formatMap.get(answer.question_id) || { format: 'text' as QuestionFormat, description: 'La pregunta' };
+    const validationError = validateQuestionAnswer(info.format, answer.value, info.description);
+    if (validationError) {
+      return { error: validationError };
+    }
     const expected = info.format;
     const trimmed = answer.value.trim();
     const numeric = Number(trimmed);

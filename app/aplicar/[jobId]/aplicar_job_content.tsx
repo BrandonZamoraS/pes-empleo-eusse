@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
+import { getQuestionFieldConfig, validateQuestionAnswer } from '@/lib/questions';
 import { uploadJobSpecificCV, submitJobApplication, saveJobAnswers } from '@/lib/actions/postulant';
 import { PROVINCES, CANTONS } from '@/lib/locations';
 import type { JobData } from '@/types/jobs';
@@ -115,6 +116,16 @@ export default function AplicarJobContent({ job, userName, userEmail }: Props) {
 
         // Save answers if any
         if (questions.length > 0 && Object.keys(answers).length > 0) {
+          for (const question of questions) {
+            const answer = answers[question.id] ?? '';
+            const validationError = validateQuestionAnswer(question.expected_format, answer, question.description);
+            if (validationError) {
+              setError(validationError);
+              setStatus('error');
+              return;
+            }
+          }
+
           const answerFormData = new FormData();
           for (const [qId, val] of Object.entries(answers)) {
             answerFormData.append(`answer_${qId}`, val);
@@ -346,9 +357,15 @@ export default function AplicarJobContent({ job, userName, userEmail }: Props) {
             {questions.length > 0 && (
               <fieldset className="space-y-4">
                 <legend className="text-sm font-semibold text-brand-900/80">Preguntas adicionales</legend>
-                {questions.map(q => (
+                {questions.map(q => {
+                  const fieldConfig = getQuestionFieldConfig(q.expected_format);
+
+                  return (
                   <label key={q.id} className="block text-sm text-brand-900/70">
-                    {q.description}
+                    <span className="block">{q.description}</span>
+                    <span className="mt-1 block text-xs font-medium uppercase tracking-[0.2em] text-brand-600/80">
+                      Tipo: {fieldConfig.label}
+                    </span>
                     {q.expected_format === 'boolean' ? (
                       <select value={answers[q.id] ?? ''} onChange={e => setAnswers({ ...answers, [q.id]: e.target.value })} disabled={loading} required
                         className="mt-1 w-full rounded-2xl border border-transparent bg-brand-50 px-3 py-2 text-brand-900 outline-none focus:ring-2 focus:ring-brand-400/40">
@@ -358,8 +375,9 @@ export default function AplicarJobContent({ job, userName, userEmail }: Props) {
                       </select>
                     ) : (
                       <input
-                        type={q.expected_format === 'date' ? 'date' : q.expected_format === 'int' || q.expected_format === 'decimal' ? 'number' : 'text'}
-                        step={q.expected_format === 'decimal' ? 'any' : undefined}
+                        type={fieldConfig.inputType}
+                        inputMode={fieldConfig.inputMode}
+                        step={fieldConfig.step}
                         value={answers[q.id] ?? ''}
                         onChange={e => setAnswers({ ...answers, [q.id]: e.target.value })}
                         disabled={loading} required
@@ -367,7 +385,8 @@ export default function AplicarJobContent({ job, userName, userEmail }: Props) {
                       />
                     )}
                   </label>
-                ))}
+                  );
+                })}
               </fieldset>
             )}
 
