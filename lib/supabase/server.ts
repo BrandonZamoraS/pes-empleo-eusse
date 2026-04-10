@@ -1,51 +1,67 @@
-/**
- * RAMA: feature/nextauth-migration
- *
- * createClient() devuelve el admin client (service role) para que todas las
- * queries de datos existentes funcionen sin RLS mientras probamos NextAuth.
- * En una migración completa se evaluaría pasar el JWT de NextAuth a Supabase
- * para mantener el RLS por usuario.
- *
- * getCurrentUser() obtiene la sesión de NextAuth y busca el perfil en
- * user_profile usando el supabaseId almacenado en el JWT.
- */
-
 import { auth } from "@/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-/**
- * Cliente de Supabase para uso en server actions y server components.
- * En esta rama usa service role para evitar bloqueos de RLS sin sesión de
- * Supabase Auth.
- */
 export async function createClient() {
   return createAdminClient();
 }
 
 export async function getCurrentUser() {
   const session = await auth();
-  const supabaseId = session?.user?.supabaseId;
-
-  if (!supabaseId) return { user: null, profile: null };
+  if (!session?.user) return { user: null, profile: null };
 
   const adminClient = createAdminClient();
   if (!adminClient) return { user: null, profile: null };
 
-  const { data: profile, error: profileError } = await adminClient
-    .from("user_profile")
-    .select("*")
-    .eq("supabase_id", supabaseId)
-    .single();
+  const supabaseId = session.user.supabaseId;
+  const email      = session.user.email;
 
-  if (profileError) console.error("Error fetching user profile:", profileError);
+  // Camino rápido: supabaseId en el token
+  if (supabaseId) {
+    const { data: profile, error } = await adminClient
+      .from("user_profile")
+      .select("*")
+      .eq("supabase_id", supabaseId)
+      .single();
 
-  return {
-    user: {
-      id: supabaseId,
-      email: session.user.email ?? "",
-    },
-    profile: profile ?? null,
-  };
+    if (error) console.error("[getCurrentUser] Error fetching profile:", error);
+
+    return {
+      user: { id: supabaseId, email: email ?? "" },
+      profile: profile ?? null,
+    };
+  }
+
+  // Fallback: buscar por email cuando el token no tiene supabaseId
+  // (ocurre si el JWT callback falló al sincronizar con Supabase)
+  if (email) {
+    const { data: { users }, error: listError } = await adminClient.auth.admin.listUsers({
+      page: 1,
+      perPage: 1000,
+    });
+
+    if (listError) {
+      console.error("[getCurrentUser] Error listing users:", listError);
+      return { user: null, profile: null };
+    }
+
+    const authUser = users.find((u) => u.email === email);
+    if (!authUser) return { user: null, profile: null };
+
+    const { data: profile, error: profileError } = await adminClient
+      .from("user_profile")
+      .select("*")
+      .eq("supabase_id", authUser.id)
+      .single();
+
+    if (profileError) console.error("[getCurrentUser] Error fetching profile by email:", profileError);
+
+    return {
+      user: { id: authUser.id, email },
+      profile: profile ?? null,
+    };
+  }
+
+  return { user: null, profile: null };
 }
 
 export async function checkUserRole(allowedRoles: string[]) {

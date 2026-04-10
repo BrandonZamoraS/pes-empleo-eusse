@@ -32,10 +32,10 @@ function extractRelation<T>(rel: T | T[] | null | undefined): T | null {
 }
 
 export default async function PostulantDashboard() {
-  const supabase = await createClient();
+  const supabase = (await createClient())!;
   const { user, profile } = await getCurrentUser();
 
-  if (!supabase || !user || !profile) {
+  if (!user || !profile) {
     return (
       <div className="rounded-3xl border border-transparent bg-white p-8 text-center shadow-[0_25px_70px_rgba(0,0,0,0.06)]">
         <p className="text-brand-900/70">No se pudo cargar el panel del postulante.</p>

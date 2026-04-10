@@ -16,24 +16,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
-  trustHost: true,
   session: { strategy: "jwt" },
+  trustHost: true,
   callbacks: {
-    /**
-     * Primera vez que el usuario inicia sesión: busca o crea el usuario en
-     * Supabase auth y hace upsert en user_profile.
-     * Nota: account y user solo están presentes en el primer sign-in.
-     */
     async jwt({ token, user, account }) {
+      // Solo en el primer sign-in (account y user están presentes)
       if (account?.provider === "google" && user?.email) {
+        // Guardar email y nombre siempre, independientemente de si Supabase falla
+        token.email = user.email;
+        token.name  = user.name ?? user.email;
+
         const adminClient = createAdminClient();
         if (!adminClient) {
-          console.error("[NextAuth jwt] SUPABASE_SERVICE_ROLE_KEY no configurado");
+          console.error("[NextAuth jwt] SUPABASE_SERVICE_ROLE_KEY no configurado — paneles no cargarán");
           return token;
         }
 
         try {
-          // Buscar usuario en Supabase auth por email
+          // 1. Buscar usuario en Supabase auth por email
           const { data: { users }, error: listError } = await adminClient.auth.admin.listUsers({
             page: 1,
             perPage: 1000,
@@ -47,7 +47,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           if (existingAuthUser) {
             supabaseId = existingAuthUser.id;
           } else {
-            // Crear nuevo usuario en Supabase auth (sin contraseña, solo para mantener la FK)
             const { data: { user: newAuthUser }, error: createError } =
               await adminClient.auth.admin.createUser({
                 email: user.email,
@@ -59,23 +58,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             supabaseId = newAuthUser.id;
           }
 
-          // Upsert en user_profile: inserta si no existe, ignora si ya existe
-          // ignoreDuplicates: true preserva el user_role y is_active existentes
-          const { error: upsertError } = await adminClient
+          // 2. Buscar perfil existente (select-then-insert para evitar dependencia de constraint UNIQUE)
+          const { data: existingProfile } = await adminClient
             .from("user_profile")
-            .upsert(
-              {
-                supabase_id: supabaseId,
-                name: user.name ?? user.email,
-                user_role: "postulant",
-                is_active: true,
-              },
-              { onConflict: "supabase_id", ignoreDuplicates: true }
-            );
+            .select("id, user_role, is_active")
+            .eq("supabase_id", supabaseId)
+            .maybeSingle();
 
-          if (upsertError) throw upsertError;
+          if (!existingProfile) {
+            await adminClient.from("user_profile").insert({
+              supabase_id: supabaseId,
+              name: user.name ?? user.email,
+              user_role: "postulant",
+              is_active: true,
+            });
+          }
 
-          // Leer el rol actual (puede ser distinto de "postulant" si ya existe)
+          // 3. Leer rol actualizado
           const { data: profile } = await adminClient
             .from("user_profile")
             .select("user_role, is_active")
@@ -83,10 +82,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             .single();
 
           token.supabaseId = supabaseId;
-          token.role = profile?.user_role ?? "postulant";
+          token.role     = profile?.user_role ?? "postulant";
           token.isActive = profile?.is_active ?? true;
         } catch (err) {
-          console.error("[NextAuth jwt]", err);
+          console.error("[NextAuth jwt] Error al sincronizar con Supabase:", err);
+          // token.email y token.name ya están seteados — getCurrentUser() usará email como fallback
         }
       }
 
@@ -94,13 +94,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
 
     async session({ session, token }) {
-      session.user.supabaseId = token.supabaseId as string;
-      session.user.role = token.role as string;
+      session.user.supabaseId = (token.supabaseId as string) ?? "";
+      session.user.role       = (token.role as string) ?? "postulant";
       return session;
     },
   },
   pages: {
     signIn: "/login",
-    error: "/login",
+    error:  "/login",
   },
 });
