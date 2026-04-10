@@ -19,7 +19,8 @@ const ROLE_REDIRECT: Record<UserRole, string> = {
 // ─── Google OAuth ────────────────────────────────────────────────────────────
 
 export async function loginWithGoogle(returnUrl?: string): Promise<void> {
-  const callbackUrl = returnUrl ?? '/dashboard/postulante';
+  // Redirigir a /auth/redirect para que determine el dashboard correcto según el rol
+  const callbackUrl = returnUrl ?? '/auth/redirect';
   await signIn('google', { redirectTo: callbackUrl });
 }
 

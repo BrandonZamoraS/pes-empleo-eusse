@@ -41,7 +41,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           if (listError) throw listError;
 
-          const existingAuthUser = users.find((u) => u.email === user.email);
+          const existingAuthUser = users.find(
+            (u) => u.email?.toLowerCase() === user.email?.toLowerCase()
+          );
           let supabaseId: string;
 
           if (existingAuthUser) {
@@ -75,11 +77,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }
 
           // 3. Leer rol actualizado
-          const { data: profile } = await adminClient
+          const { data: profile, error: profileError } = await adminClient
             .from("user_profile")
             .select("user_role, is_active")
             .eq("supabase_id", supabaseId)
             .single();
+
+          if (profileError) console.error("[NextAuth jwt] Error leyendo perfil:", profileError);
+          console.log(`[NextAuth jwt] supabaseId=${supabaseId} role=${profile?.user_role}`);
 
           token.supabaseId = supabaseId;
           token.role     = profile?.user_role ?? "postulant";
