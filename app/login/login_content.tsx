@@ -3,8 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useTransition } from "react";
-import { login } from "@/lib/actions/auth";
-import { signIn } from "next-auth/react";
+import { login, loginWithGoogle } from "@/lib/actions/auth";
 import PasswordInput from "@/ui/components/password_input";
 
 interface LoginContentProps {
@@ -33,7 +32,7 @@ export default function LoginContent({ authError, returnUrl }: LoginContentProps
   const handleGoogleLogin = async () => {
     setError(null);
     const callbackUrl = returnUrl && returnUrl.startsWith("/") ? returnUrl : "/dashboard/postulante";
-    await signIn("google", { callbackUrl });
+    await loginWithGoogle(callbackUrl);
   };
 
   return (

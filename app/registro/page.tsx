@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useTransition } from 'react';
 import { signup } from '@/lib/actions/auth';
-import { signIn } from 'next-auth/react';
+import { loginWithGoogle } from '@/lib/actions/auth';
 import PasswordInput from '@/ui/components/password_input';
 
 export default function RegisterPage() {
@@ -28,7 +28,7 @@ export default function RegisterPage() {
 
   const handleGoogleSignup = async () => {
     setError(null);
-    await signIn('google', { callbackUrl: '/dashboard/postulante' });
+    await loginWithGoogle('/dashboard/postulante');
   };
 
   if (submitted) {
