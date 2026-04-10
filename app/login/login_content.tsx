@@ -40,7 +40,7 @@ export default function LoginContent({ authError, returnUrl }: LoginContentProps
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 rounded-3xl border border-transparent bg-white p-8 shadow-[0_35px_90px_rgba(0,0,0,0.08)] lg:flex-row">
       <div className="flex-1">
         <p className="text-xs uppercase tracking-[0.35em] text-brand-600">Portal de empleo Eusse</p>
-        <h1 className="my-3 text-3xl font-bold text-brand-900">Inicia sesión para continuar</h1>
+        <h1 className="my-3 text-3xl font-bold text-green-600">Inicia sesión para continuar</h1>
 
         {(error || authError) && (
           <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
