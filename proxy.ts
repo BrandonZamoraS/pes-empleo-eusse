@@ -1,5 +1,6 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import type { NextAuthRequest } from "next-auth";
 import {
   getAllowedRoles,
   getRedirectForRole,
@@ -7,7 +8,7 @@ import {
 } from "@/lib/auth/navigation";
 import type { UserRole } from "@/types/auth";
 
-export default auth((request: NextRequest & { auth: ReturnType<typeof auth> extends Promise<infer T> ? T : never }) => {
+export default auth((request: NextAuthRequest) => {
   const { pathname } = request.nextUrl;
 
   // Excluir rutas propias de NextAuth
@@ -15,8 +16,7 @@ export default auth((request: NextRequest & { auth: ReturnType<typeof auth> exte
     return NextResponse.next();
   }
 
-  const session = (request as any).auth;
-  const user = session?.user ?? null;
+  const user = request.auth?.user ?? null;
   const userRole = (user?.role ?? null) as UserRole | null;
 
   // Login/registro: si ya autenticado redirigir al dashboard
