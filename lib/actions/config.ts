@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getCurrentUser } from '@/lib/supabase/server';
 
 export interface ActionResult {
   error?: string;
@@ -78,23 +78,11 @@ const validateFormData = (formData: FormData, fieldName: string) => {
   return value.trim();
 };
 
-const getCurrentUserProfile = async (supabase: SupabaseClient) => {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error('Usuario no autenticado');
-  }
-
-  const { data: profile } = await supabase
-    .from('user_profile')
-    .select('id')
-    .eq('supabase_id', user.id)
-    .single();
+const getCurrentUserProfile = async (_supabase: SupabaseClient) => {
+  const { profile } = await getCurrentUser();
 
   if (!profile) {
-    throw new Error('Perfil de usuario no encontrado');
+    throw new Error('Usuario no autenticado');
   }
 
   return profile;

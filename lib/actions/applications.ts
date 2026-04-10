@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getCurrentUser } from '@/lib/supabase/server';
 import type { ApplicationStatus } from '@/lib/constants';
 import type { ApplicationNoteData } from '@/lib/application_note_types';
 import { buildNoteTree } from '@/lib/application_notes';
@@ -305,19 +305,9 @@ export async function addApplicationNote(
   }
 
   // Obtener el perfil del usuario actual
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return { error: 'Usuario no autenticado' };
-  }
-
-  const { data: profile } = await supabase
-    .from('user_profile')
-    .select('id')
-    .eq('supabase_id', user.id)
-    .single();
-
+  const { profile } = await getCurrentUser();
   if (!profile) {
-    return { error: 'Perfil de usuario no encontrado' };
+    return { error: 'Usuario no autenticado' };
   }
 
   const { data: note, error } = await supabase
@@ -353,19 +343,9 @@ export async function deleteApplicationNote(noteId: number): Promise<ActionResul
     return { error: 'Error de configuración del servidor' };
   }
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return { error: 'Usuario no autenticado' };
-  }
-
-  const { data: profile } = await supabase
-    .from('user_profile')
-    .select('id, user_role')
-    .eq('supabase_id', user.id)
-    .single();
-
+  const { profile } = await getCurrentUser();
   if (!profile) {
-    return { error: 'Perfil de usuario no encontrado' };
+    return { error: 'Usuario no autenticado' };
   }
 
   const { data: note } = await supabase

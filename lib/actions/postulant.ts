@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { validateQuestionAnswer } from '@/lib/questions';
 import { createClient, getCurrentUser } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { signOut } from '@/auth';
 import type { QuestionFormat } from '@/types/jobs';
 
 const ALLOWED_CV_TYPES = [
@@ -268,12 +270,14 @@ export async function deleteAccount(formData: FormData): Promise<ActionResult> {
     }
   }
 
-  // Eliminar el usuario de auth (esto activará el CASCADE para user_profile y relacionados)
-  const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
+  // Eliminar el usuario de Supabase auth (activa CASCADE en user_profile y relacionados)
+  const authAdminClient = createAdminClient();
+  const { error: deleteError } = authAdminClient
+    ? await authAdminClient.auth.admin.deleteUser(user.id)
+    : { error: new Error('Admin client no disponible') };
 
-  // Si no tenemos permisos de admin, intentar con el método del cliente
   if (deleteError) {
-    // Marcar como inactivo si no podemos eliminar completamente
+    // Marcar como inactivo si no se puede eliminar completamente
     const { error: updateError } = await supabase
       .from('user_profile')
       .update({ is_active: false })
@@ -284,13 +288,12 @@ export async function deleteAccount(formData: FormData): Promise<ActionResult> {
       return { error: 'Error al eliminar la cuenta' };
     }
 
-    // Cerrar sesión
-    await supabase.auth.signOut();
+    await signOut({ redirectTo: '/' });
     redirect('/');
   }
 
-  // Cerrar sesión y redirigir
-  await supabase.auth.signOut();
+  // Cerrar sesión NextAuth y redirigir
+  await signOut({ redirectTo: '/' });
   redirect('/');
 }
 

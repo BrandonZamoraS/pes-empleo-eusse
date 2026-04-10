@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useTransition } from 'react';
 import { signup } from '@/lib/actions/auth';
-import { createClient } from '@/lib/supabase/client';
+import { signIn } from 'next-auth/react';
 import PasswordInput from '@/ui/components/password_input';
 
 export default function RegisterPage() {
@@ -28,13 +28,7 @@ export default function RegisterPage() {
 
   const handleGoogleSignup = async () => {
     setError(null);
-    const supabase = createClient();
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
-    if (error) { setError(error.message); return; }
-    if (data.url) window.location.href = data.url;
+    await signIn('google', { callbackUrl: '/dashboard/postulante' });
   };
 
   if (submitted) {

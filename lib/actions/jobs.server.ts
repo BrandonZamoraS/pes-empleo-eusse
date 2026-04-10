@@ -2,7 +2,7 @@
 
 import "server-only";
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getCurrentUser } from '@/lib/supabase/server';
 import type {
   JobStatus,
   CompanyData,
@@ -215,19 +215,9 @@ export async function createJob(formData: FormData): Promise<{ data?: JobData; e
   }
 
   // Obtener el perfil del usuario actual
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return { error: 'Usuario no autenticado' };
-  }
-
-  const { data: profile } = await supabase
-    .from('user_profile')
-    .select('id')
-    .eq('supabase_id', user.id)
-    .single();
-
+  const { profile } = await getCurrentUser();
   if (!profile) {
-    return { error: 'Perfil de usuario no encontrado' };
+    return { error: 'Usuario no autenticado' };
   }
 
   const company = parseInt(formData.get('company') as string);
@@ -453,19 +443,9 @@ export async function duplicateJob(jobId: number): Promise<{ data?: JobData; err
   }
 
   // Obtener el perfil del usuario actual
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return { error: 'Usuario no autenticado' };
-  }
-
-  const { data: profile } = await supabase
-    .from('user_profile')
-    .select('id')
-    .eq('supabase_id', user.id)
-    .single();
-
+  const { profile } = await getCurrentUser();
   if (!profile) {
-    return { error: 'Perfil de usuario no encontrado' };
+    return { error: 'Usuario no autenticado' };
   }
 
   // Crear la copia
@@ -631,19 +611,9 @@ export async function createPosition(description: string): Promise<{ data?: Posi
   }
 
   // Obtener el perfil del usuario actual
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return { error: 'Usuario no autenticado' };
-  }
-
-  const { data: profile } = await supabase
-    .from('user_profile')
-    .select('id')
-    .eq('supabase_id', user.id)
-    .single();
-
+  const { profile } = await getCurrentUser();
   if (!profile) {
-    return { error: 'Perfil de usuario no encontrado' };
+    return { error: 'Usuario no autenticado' };
   }
 
   const { data, error } = await supabase

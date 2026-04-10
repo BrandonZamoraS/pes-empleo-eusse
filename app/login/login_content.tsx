@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useTransition } from "react";
 import { login } from "@/lib/actions/auth";
-import { createClient } from "@/lib/supabase/client";
+import { signIn } from "next-auth/react";
 import PasswordInput from "@/ui/components/password_input";
 
 interface LoginContentProps {
@@ -32,23 +32,8 @@ export default function LoginContent({ authError, returnUrl }: LoginContentProps
 
   const handleGoogleLogin = async () => {
     setError(null);
-    const supabase = createClient();
-    const callbackUrl = returnUrl
-      ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(returnUrl)}`
-      : `${window.location.origin}/auth/callback`;
-    const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: callbackUrl },
-    });
-
-    if (oauthError) {
-      setError(oauthError.message);
-      return;
-    }
-
-    if (data.url) {
-      window.location.href = data.url;
-    }
+    const callbackUrl = returnUrl && returnUrl.startsWith("/") ? returnUrl : "/dashboard/postulante";
+    await signIn("google", { callbackUrl });
   };
 
   return (

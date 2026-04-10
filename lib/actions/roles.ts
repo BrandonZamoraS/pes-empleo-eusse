@@ -7,7 +7,7 @@ import {
 } from '@/lib/actions/admin_user_creation';
 import { mapAdminProfilesWithEmails, type AdminProfileRecord } from '@/lib/actions/role_user_mappers';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getCurrentUser } from '@/lib/supabase/server';
 import type { UserRole } from '@/types/auth';
 
 export interface UserProfileData {
@@ -65,9 +65,7 @@ export async function getAdminUsers(): Promise<{ data: UserProfileData[] | null;
       throw error;
     }
 
-    const {
-      data: { user: currentUser },
-    } = await supabase.auth.getUser();
+    const { user: currentUser } = await getCurrentUser();
 
     const authEmailsById = new Map<string, string>();
 

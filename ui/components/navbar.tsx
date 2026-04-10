@@ -3,10 +3,10 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { useEffect, useEffectEvent, useState, useTransition } from 'react';
+import { useTransition } from 'react';
+import { useSession } from 'next-auth/react';
 import BurgerBtn from './burguer_btn';
 import { logout } from '@/lib/actions/auth';
-import { createClient } from '@/lib/supabase/client';
 import type { UserRole } from '@/types/auth';
 
 interface NavbarUser {
@@ -34,39 +34,12 @@ export default function Navbar() {
   const pathname = usePathname();
   const disablePrefetch = pathname.startsWith('/dashboard');
   const [isPending, startTransition] = useTransition();
-  const [user, setUser] = useState<NavbarUser | null>(null);
-  const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const { data: session } = useSession();
 
-  const syncSession = useEffectEvent(async () => {
-    const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) {
-      setUser(null);
-      setUserRole(null);
-      return;
-    }
-    setUser({ id: session.user.id, email: session.user.email ?? '' });
-    const { data: profile } = await supabase
-      .from('user_profile')
-      .select('user_role')
-      .eq('supabase_id', session.user.id)
-      .single();
-    setUserRole((profile?.user_role as UserRole) ?? null);
-  });
-
-  // Re-sync auth whenever the route changes (covers server-action redirects)
-  useEffect(() => {
-    void syncSession();
-  }, [pathname]);
-
-  // Also listen for real-time auth events (login/logout from other tabs, token refresh)
-  useEffect(() => {
-    const supabase = createClient();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      void syncSession();
-    });
-    return () => { subscription.unsubscribe(); };
-  }, []);
+  const user: NavbarUser | null = session?.user
+    ? { id: session.user.supabaseId ?? '', email: session.user.email ?? '' }
+    : null;
+  const userRole = (session?.user?.role ?? null) as UserRole | null;
 
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href);
