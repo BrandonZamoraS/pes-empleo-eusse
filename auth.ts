@@ -7,8 +7,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      authorization: {
+        params: {
+          redirect_uri: process.env.AUTH_URL
+            ? `${process.env.AUTH_URL}/api/auth/callback/google`
+            : undefined,
+        },
+      },
     }),
   ],
+  trustHost: true,
   session: { strategy: "jwt" },
   callbacks: {
     /**
