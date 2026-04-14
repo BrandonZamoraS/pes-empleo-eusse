@@ -3,9 +3,8 @@ import Link from 'next/link';
 import { FaFacebookF, FaYoutube, FaInstagram } from 'react-icons/fa';
 
 const SOCIAL_LINKS = [
-  { href: 'https://www.facebook.com',  icon: FaFacebookF, label: 'Facebook',  hover: 'hover:text-blue-400' },
-  { href: 'https://www.youtube.com',   icon: FaYoutube,   label: 'YouTube',   hover: 'hover:text-red-500'  },
-  { href: 'https://www.instagram.com', icon: FaInstagram, label: 'Instagram', hover: 'hover:text-pink-500' },
+  { href: 'https://www.facebook.com/grupoeusse',  icon: FaFacebookF, label: 'Facebook',  hover: 'hover:text-blue-400' },
+  { href: 'https://www.instagram.com/grupoeusse', icon: FaInstagram, label: 'Instagram', hover: 'hover:text-pink-500' },
 ];
 
 export default function Footer() {
