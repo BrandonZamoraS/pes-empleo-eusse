@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import type { ApplicationStatus } from '@/lib/constants';
 import type { ApplicationNoteData } from '@/lib/application_note_types';
 import { buildNoteTree } from '@/lib/application_notes';
+import { buildApplicationSearchFilter } from '@/lib/application_search';
 
 export interface ActionResult {
   error?: string;
@@ -101,6 +102,46 @@ export interface ApplicationData {
 
 type SupabaseClient = NonNullable<Awaited<ReturnType<typeof createClient>>>;
 
+type JobSearchRow = { id: number };
+type CompanySearchRow = { id: number };
+
+async function findMatchingApplicationJobIds(supabase: SupabaseClient, search: string) {
+  const trimmedSearch = search.trim();
+
+  if (!trimmedSearch) {
+    return { jobIds: [] as number[] };
+  }
+
+  const term = `%${trimmedSearch}%`;
+  const { data: matchingCompanies, error: companyError } = await supabase
+    .from('company')
+    .select('id')
+    .ilike('name', term);
+
+  if (companyError) {
+    return { jobIds: [] as number[], error: companyError };
+  }
+
+  const companyIds = ((matchingCompanies || []) as CompanySearchRow[]).map((company) => company.id);
+  let jobsQuery = supabase.from('job').select('id');
+
+  if (companyIds.length > 0) {
+    jobsQuery = jobsQuery.or(`title.ilike.${term},company.in.(${companyIds.join(',')})`);
+  } else {
+    jobsQuery = jobsQuery.ilike('title', term);
+  }
+
+  const { data: matchingJobs, error: jobError } = await jobsQuery;
+
+  if (jobError) {
+    return { jobIds: [] as number[], error: jobError };
+  }
+
+  return {
+    jobIds: Array.from(new Set(((matchingJobs || []) as JobSearchRow[]).map((job) => job.id))),
+  };
+}
+
 async function fetchApplicationExtraDetails(
   supabase: SupabaseClient,
   app: { id: number; user_id: string; job_id: number }
@@ -183,15 +224,14 @@ export async function getApplications({
 
   const trimmedSearch = (search || '').trim();
   if (trimmedSearch) {
-    const term = `%${trimmedSearch}%`;
-    query = query.or(
-      [
-        `applicant_full_name.ilike.${term}`,
-        `applicant_id_number.ilike.${term}`,
-        `applicant_phone.ilike.${term}`,
-        `job.title.ilike.${term}`,
-      ].join(',')
-    );
+    const { jobIds, error } = await findMatchingApplicationJobIds(supabase, trimmedSearch);
+
+    if (error) {
+      console.error('Error fetching matching application jobs:', error);
+      return { data: null, total: 0, error: error.message };
+    }
+
+    query = query.or(buildApplicationSearchFilter(trimmedSearch, jobIds));
   }
 
   const { data: applications, error, count } = await query;
